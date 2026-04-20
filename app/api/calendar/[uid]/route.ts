@@ -117,17 +117,10 @@ function buildVEvent(event: ParsedEvent, alert1: number, alert2: number): string
   const addAlarm = (minutes: number, label: string) => {
     if (minutes <= 0) return;
     const trigger = formatTrigger(minutes);
-    // Hashed-like UID for the alarm to keep it stable
-    const alarmUid = `${event.uid.slice(-10)}-${label.replace(/\s+/g, "")}`;
-    
     lines.push("BEGIN:VALARM");
-    lines.push("ACTION:DISPLAY");
+    lines.push(`TRIGGER:${trigger}`);
+    lines.push("ACTION:AUDIO");
     lines.push(`DESCRIPTION:${label}`);
-    lines.push(`SUMMARY:${label}`);
-    // Explicitly using VALUE=DURATION for some older iCal parsers
-    lines.push(`TRIGGER;VALUE=DURATION:${trigger}`);
-    lines.push(`X-WR-ALARMUID:${alarmUid}`);
-    lines.push("X-APPLE-DEFAULT-ALARM:TRUE");
     lines.push("END:VALARM");
   };
 
