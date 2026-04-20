@@ -155,6 +155,7 @@ export default function Dashboard() {
   const [calsExpanded, setCalsExpanded] = useState(false);
 
   // ── Event preview modal (single calendar OR all) ──────────────────────────
+  const [previewCalId, setPreviewCalId] = useState<string>("all");
   const [previewCalName, setPreviewCalName] = useState<string>("");
   const [previewGroups, setPreviewGroups] = useState<DayGroup[]>([]);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -368,6 +369,7 @@ export default function Dashboard() {
 
   const openPreview = async (calId: string, calName: string) => {
     setPreviewOpen(true);
+    setPreviewCalId(calId);
     setPreviewCalName(calName);
     setPreviewGroups([]);
     setPreviewError("");
@@ -419,7 +421,7 @@ export default function Dashboard() {
     await saveConfig({ ...config, eventOverrides: updatedOverrides }, "Evento actualizado");
     setEditingEvent(null);
     // Refresh preview
-    await openPreview("all", previewCalName).catch(() => {});
+    await openPreview(previewCalId, previewCalName).catch(() => {});
   };
 
   const handleDeleteEventOverride = async (ev: RawEvent) => {
@@ -429,7 +431,7 @@ export default function Dashboard() {
     const updatedOverrides = { ...currentOverrides, [ev.uid]: { ...current, deleted: true } };
     await saveConfig({ ...config, eventOverrides: updatedOverrides }, "Evento eliminado");
     if (editingEvent?.uid === ev.uid) setEditingEvent(null);
-    await openPreview("all", previewCalName).catch(() => {});
+    await openPreview(previewCalId, previewCalName).catch(() => {});
   };
 
   const handleResetEventOverride = async () => {
