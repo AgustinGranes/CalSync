@@ -29,6 +29,7 @@ export default function Dashboard() {
   const router = useRouter();
 
   const [config, setConfig] = useState<UserConfig | null>(null);
+  const [configError, setConfigError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -59,22 +60,35 @@ export default function Dashboard() {
   // Load user config from Firestore
   const loadConfig = useCallback(async () => {
     if (!user) return;
-    const ref = doc(db, "users", user.uid);
-    const snap = await getDoc(ref);
-    if (snap.exists()) {
-      setConfig(snap.data() as UserConfig);
-    } else {
-      // Create default config
-      const newConfig: UserConfig = {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
-        ...DEFAULT_CONFIG,
-        createdAt: Date.now(),
-      };
-      await setDoc(ref, newConfig);
-      setConfig(newConfig);
+    setConfigError(null);
+    try {
+      const ref = doc(db, "users", user.uid);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        setConfig(snap.data() as UserConfig);
+      } else {
+        // Create default config
+        const newConfig: UserConfig = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          ...DEFAULT_CONFIG,
+          createdAt: Date.now(),
+        };
+        await setDoc(ref, newConfig);
+        setConfig(newConfig);
+      }
+    } catch (err: unknown) {
+      console.error("[CalSync] Firestore load error:", err);
+      const code = (err as { code?: string })?.code ?? "";
+      if (code === "permission-denied") {
+        setConfigError("Sin permisos para leer la base de datos. Verificá las reglas de Firestore.");
+      } else if (code === "unavailable" || code === "deadline-exceeded") {
+        setConfigError("No se pudo conectar a la base de datos. Verificá tu conexión.");
+      } else {
+        setConfigError(`Error al cargar la configuración: ${code || "desconocido"}`);
+      }
     }
   }, [user]);
 
@@ -206,7 +220,7 @@ export default function Dashboard() {
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
-  if (loading || !config) {
+  if (loading || (!config && !configError)) {
     return (
       <main className={styles.main}>
         <div className={styles.blobPurple} aria-hidden />
@@ -217,6 +231,30 @@ export default function Dashboard() {
       </main>
     );
   }
+
+  if (configError) {
+    return (
+      <main className={styles.main}>
+        <div className={styles.blobPurple} aria-hidden />
+        <div className={styles.blobBlue} aria-hidden />
+        <div className={styles.loadingCenter}>
+          <div className={styles.errorBox}>
+            <p className={styles.errorTitle}>Error de conexión</p>
+            <p className={styles.errorMsg}>{configError}</p>
+            <button className={styles.btnRetry} onClick={() => loadConfig()}>
+              Reintentar
+            </button>
+            <button className={styles.btnRetrySecondary} onClick={handleLogout}>
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // At this point config is guaranteed non-null
+  const safeConfig = config!;
 
   return (
     <main className={styles.main}>
@@ -250,10 +288,10 @@ export default function Dashboard() {
           </div>
 
           <div className={styles.userSection}>
-            {config.photoURL && (
+            {safeConfig.photoURL && (
               <img
-                src={config.photoURL}
-                alt={config.displayName || "Usuario"}
+                src={safeConfig.photoURL}
+                alt={safeConfig.displayName || "Usuario"}
                 className={styles.avatar}
               />
             )}
@@ -326,17 +364,17 @@ export default function Dashboard() {
             <div>
               <h2 className={styles.cardTitle}>Mis calendarios</h2>
               <p className={styles.cardDesc}>
-                {config.calendars.length === 0
+                {safeConfig.calendars.length === 0
                   ? "No tenés calendarios configurados"
-                  : `${config.calendars.filter((c) => c.enabled).length} de ${config.calendars.length} activos`}
+                  : `${safeConfig.calendars.filter((c) => c.enabled).length} de ${safeConfig.calendars.length} activos`}
               </p>
             </div>
           </div>
 
           {/* Calendar list */}
-          {config.calendars.length > 0 && (
+          {safeConfig.calendars.length > 0 && (
             <ul className={styles.calList} aria-label="Lista de calendarios">
-              {config.calendars.map((cal) => (
+              {safeConfig.calendars.map((cal) => (
                 <li key={cal.id} className={`${styles.calItem} ${!cal.enabled ? styles.calItemDisabled : ""}`}>
                   <div className={styles.calItemLeft}>
                     <button
@@ -459,7 +497,7 @@ export default function Dashboard() {
             <select
               id="alert1"
               className={styles.select}
-              value={config.alert1Minutes}
+              value={safeConfig.alert1Minutes}
               onChange={(e) => handleAlertChange("alert1Minutes", Number(e.target.value))}
             >
               {ALERT_OPTIONS.map((opt) => (
@@ -478,7 +516,7 @@ export default function Dashboard() {
             <select
               id="alert2"
               className={styles.select}
-              value={config.alert2Minutes}
+              value={safeConfig.alert2Minutes}
               onChange={(e) => handleAlertChange("alert2Minutes", Number(e.target.value))}
             >
               {ALERT_OPTIONS.map((opt) => (
@@ -497,7 +535,7 @@ export default function Dashboard() {
         </section>
 
         <footer className={styles.footer}>
-          <p>Sesión iniciada como {config.displayName || config.email}</p>
+          <p>Sesión iniciada como {safeConfig.displayName || safeConfig.email}</p>
         </footer>
       </div>
 

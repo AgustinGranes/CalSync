@@ -40,6 +40,65 @@
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+.errorBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 28px;
+  background: var(--bg-card);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-xl);
+  max-width: 380px;
+  text-align: center;
+  backdrop-filter: blur(20px);
+}
+
+.errorTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f87171;
+  margin: 0;
+}
+
+.errorMsg {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.btnRetry {
+  padding: 10px 22px;
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: var(--font-inter);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.btnRetry:hover { transform: translateY(-2px); }
+
+.btnRetrySecondary {
+  padding: 9px 22px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-family: var(--font-inter);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.btnRetrySecondary:hover { color: var(--text-primary); }
+
 /* ─── Background Blobs ───────────────────────────────────────────────────── */
 .blobPurple,
 .blobBlue,

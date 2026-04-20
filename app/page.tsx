@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -49,6 +50,25 @@ export default function Home() {
     if (!loading && user) router.push("/dashboard");
   }, [user, loading, router]);
 
+  // Handle redirect result from Google Sign-In
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result?.user) {
+          const { uid, email: e, displayName, photoURL } = result.user;
+          await ensureUserDoc(uid, e, displayName, photoURL);
+          router.push("/dashboard");
+        }
+      })
+      .catch((err: unknown) => {
+        const code = (err as { code?: string })?.code ?? "";
+        if (code && code !== "auth/no-current-user") {
+          setAuthError("Error al iniciar sesión con Google. Intentá con email.");
+        }
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const clearError = () => setAuthError("");
 
   // ─── Google ───────────────────────────────────────────────────────────────
@@ -58,21 +78,11 @@ export default function Home() {
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
-      const result = await signInWithPopup(auth, provider);
-      const { uid, email: e, displayName, photoURL } = result.user;
-      await ensureUserDoc(uid, e, displayName, photoURL);
-      router.push("/dashboard");
+      await signInWithRedirect(auth, provider);
+      // Page will redirect — no further code runs here
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code ?? "";
-      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
-        // User closed popup — not an error
-      } else if (code === "auth/popup-blocked") {
-        setAuthError("El popup fue bloqueado por el navegador. Habilitá los popups para este sitio e intentá de nuevo.");
-      } else {
-        setAuthError("Error al iniciar sesión con Google. Intentá con email y contraseña.");
-        console.error("Google login error:", err);
-      }
-    } finally {
+      setAuthError(code ? `Error: ${code}` : "Error al iniciar sesión con Google.");
       setAuthLoading(false);
     }
   };

@@ -25,11 +25,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+    // Fallback: if Firebase doesn't respond in 8s, stop loading
+    const timeout = setTimeout(() => {
       setLoading(false);
-    });
-    return unsub;
+    }, 8000);
+
+    const unsub = onAuthStateChanged(
+      auth,
+      (firebaseUser) => {
+        clearTimeout(timeout);
+        setUser(firebaseUser);
+        setLoading(false);
+      },
+      (error) => {
+        // Auth error (e.g. bad config)
+        clearTimeout(timeout);
+        console.error("[CalSync] onAuthStateChanged error:", error);
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      clearTimeout(timeout);
+      unsub();
+    };
   }, []);
 
   return (
