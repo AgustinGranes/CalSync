@@ -110,23 +110,32 @@ function buildVEvent(event: ParsedEvent, alert1: number, alert2: number): string
     lines.push(`RRULE:${event.rrule}`);
   }
 
-  if (alert1 > 0) {
+  const addAlarm = (minutes: number, idSuffix: string) => {
+    if (minutes <= 0) return;
+    const trigger = formatTrigger(minutes);
+    const alarmUid = `${event.uid}-alarm-${idSuffix}`;
+    
+    // Display Alarm
     lines.push("BEGIN:VALARM");
-    lines.push(`TRIGGER:${formatTrigger(alert1)}`);
+    lines.push(`UID:${alarmUid}-display`);
+    lines.push(`X-WR-ALARMUID:${alarmUid}-display`);
+    lines.push(`TRIGGER:${trigger}`);
     lines.push("ACTION:DISPLAY");
-    lines.push("DESCRIPTION:Recordatorio");
-    lines.push("X-APPLE-DEFAULT-ALARM:TRUE");
+    lines.push(foldLine(`DESCRIPTION:Recordatorio de ${event.summary}`));
     lines.push("END:VALARM");
-  }
 
-  if (alert2 > 0) {
+    // Audio Alarm (Better for iOS/macOS bypass)
     lines.push("BEGIN:VALARM");
-    lines.push(`TRIGGER:${formatTrigger(alert2)}`);
-    lines.push("ACTION:DISPLAY");
-    lines.push("DESCRIPTION:Recordatorio");
+    lines.push(`UID:${alarmUid}-audio`);
+    lines.push(`X-WR-ALARMUID:${alarmUid}-audio`);
+    lines.push(`TRIGGER:${trigger}`);
+    lines.push("ACTION:AUDIO");
     lines.push("X-APPLE-DEFAULT-ALARM:TRUE");
     lines.push("END:VALARM");
-  }
+  };
+
+  addAlarm(alert1, "1");
+  addAlarm(alert2, "2");
 
   lines.push("END:VEVENT");
   return lines.join("\r\n");
