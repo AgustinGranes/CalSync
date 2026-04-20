@@ -750,6 +750,14 @@
   pointer-events: auto;
 }
 
+/* Red variant for error messages */
+.toastError {
+  background: rgba(30, 10, 10, 0.95);
+  border-color: rgba(248, 113, 113, 0.4);
+  color: #fca5a5;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(248, 113, 113, 0.15);
+}
+
 /* ─── Modals ─────────────────────────────────────────────────────────────── */
 .modalOverlay {
   position: fixed;

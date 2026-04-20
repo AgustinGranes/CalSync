@@ -122,10 +122,12 @@ export default function Dashboard() {
 
   // Toast
   const [toast, setToast] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<"success" | "error">("success");
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const showToast = useCallback((msg: string) => {
+  const showToast = useCallback((msg: string, type: "success" | "error" = "success") => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast(msg);
+    setToastType(type);
     toastTimer.current = setTimeout(() => setToast(null), 3000);
   }, []);
 
@@ -419,7 +421,8 @@ export default function Dashboard() {
   const handleShare = async () => {
     if (!user || !origin) return;
     const link = `${origin}/api/calendar/${user.uid}`;
-    const msg = `¡Seleccioná los calendarios que quieras de mi CalSync! (Copia el enlace al portapapeles): ${link}`;
+    const name = cfg.displayName || cfg.email || user.uid;
+    const msg = `¡Seleccioná los calendarios que quieras de el CalSync de ${name}! (Copia el enlace al portapapeles): ${link}`;
     await navigator.clipboard.writeText(msg);
     showToast("✓ Enlace copiado al portapapeles");
   };
@@ -489,10 +492,10 @@ export default function Dashboard() {
     if (toAdd.length > 0) {
       await saveConfig(
         { ...config, calendars: [...config.calendars, ...toAdd] },
-        `${toAdd.length} calendario${toAdd.length !== 1 ? "s" : ""} importado${toAdd.length !== 1 ? "s" : ""}`
+        "Calendarios guardados"
       );
     } else {
-      showToast("Sin cambios nuevos");
+      showToast("✗ No hay cambios nuevos", "error");
     }
     setReceivePopup(false);
     setExternalData(null);
@@ -814,11 +817,22 @@ export default function Dashboard() {
       </div>
 
       {/* ── Toast notification ─────────────────────────────────────────────── */}
-      <div className={`${styles.toast} ${toast ? styles.toastVisible : ""}`} role="status" aria-live="polite">
-        <svg viewBox="0 0 20 20" fill="none" width="18" height="18" aria-hidden>
-          <circle cx="10" cy="10" r="9" stroke="#22c55e" strokeWidth="2" />
-          <path d="M6 10l3 3 5-5" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+      <div
+        className={`${styles.toast} ${toast ? styles.toastVisible : ""} ${toastType === "error" ? styles.toastError : ""}`}
+        role="status"
+        aria-live="polite"
+      >
+        {toastType === "error" ? (
+          <svg viewBox="0 0 20 20" fill="none" width="18" height="18" aria-hidden>
+            <circle cx="10" cy="10" r="9" stroke="#f87171" strokeWidth="2" />
+            <path d="M7 7l6 6M13 7l-6 6" stroke="#f87171" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        ) : (
+          <svg viewBox="0 0 20 20" fill="none" width="18" height="18" aria-hidden>
+            <circle cx="10" cy="10" r="9" stroke="#22c55e" strokeWidth="2" />
+            <path d="M6 10l3 3 5-5" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
         {toast}
       </div>
 
@@ -1048,7 +1062,7 @@ export default function Dashboard() {
                 </ul>
                 <div className={styles.formActions}>
                   <button className={styles.btnPrimary} onClick={handleSaveExternal} disabled={saving}>
-                    {saving ? "Guardando..." : `Guardar ${selectedExtIds.size} seleccionado${selectedExtIds.size !== 1 ? "s" : ""}`}
+                    {saving ? "Guardando..." : "Guardar cambios"}
                   </button>
                   <button className={styles.btnSecondary} onClick={() => { setReceivePopup(false); setExternalData(null); }}>
                     Cancelar

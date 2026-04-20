@@ -123,7 +123,9 @@ export default function Home() {
     }
   };
 
-  if (loading) {
+  if (loading || user) {
+    // Still determining auth state, OR user is logged in and redirect is pending —
+    // show only a spinner so the login form never flashes.
     return (
       <main className={styles.main}>
         <div className={styles.blobPurple} aria-hidden />
