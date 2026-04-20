@@ -768,15 +768,15 @@ export default function Dashboard() {
             <li className={styles.calItem}>
               <div className={styles.calItemLeft}>
                 <button
-                  className={`${styles.toggleBtn} ${showEmojis ? styles.toggleOn : styles.toggleOff}`}
+                  className={`${styles.toggleBtn} ${!showEmojis ? styles.toggleOn : styles.toggleOff}`}
                   onClick={() => handleToggleFormat("showEmojis")}
-                  aria-label="Activar emojis en títulos"
+                  aria-label="Eliminar emojis en títulos"
                 >
                   <span className={styles.toggleThumb} />
                 </button>
                 <div className={styles.calInfo}>
                   <span className={styles.calName}>Eliminar emojis en el título</span>
-                  <span className={styles.calUrlFull}>Mantiene los emojis originales de cada evento</span>
+                  <span className={styles.calUrlFull}>Elimina automáticamente los emojis en los eventos</span>
                 </div>
               </div>
             </li>
