@@ -9,6 +9,8 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
+  sendEmailVerification,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
@@ -44,6 +46,7 @@ export default function Home() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [authError, setAuthError] = useState("");
+  const [authMsg, setAuthMsg] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
 
   useEffect(() => {
@@ -69,7 +72,7 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const clearError = () => setAuthError("");
+  const clearError = () => { setAuthError(""); setAuthMsg(""); };
 
   // ─── Google ───────────────────────────────────────────────────────────────
   const handleGoogleLogin = async () => {
@@ -103,6 +106,7 @@ export default function Home() {
         if (password.length < 6) { setAuthError("La contraseña debe tener al menos 6 caracteres."); setAuthLoading(false); return; }
         const result = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(result.user, { displayName: name.trim() });
+        await sendEmailVerification(result.user);
         await ensureUserDoc(result.user.uid, email, name.trim(), null);
       }
       router.push("/dashboard");
@@ -118,6 +122,29 @@ export default function Home() {
         "auth/too-many-requests":    "Demasiados intentos fallidos. Esperá un momento.",
       };
       setAuthError(messages[code] ?? `Error: ${code || "desconocido"}`);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!email.trim()) {
+      setAuthError("Ingresá tu email para recuperar la contraseña.");
+      return;
+    }
+    setAuthError("");
+    setAuthMsg("");
+    setAuthLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setAuthMsg("Se ha enviado un enlace de recuperación a tu email.");
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code ?? "";
+      if (code === "auth/user-not-found" || code === "auth/invalid-email") {
+        setAuthError("El email ingresado no es válido o no está registrado.");
+      } else {
+        setAuthError("Error al enviar el correo de recuperación.");
+      }
     } finally {
       setAuthLoading(false);
     }
@@ -286,8 +313,25 @@ export default function Home() {
               />
             </div>
 
+            {mode === "login" && (
+              <div style={{ textAlign: "right", marginTop: "-10px", marginBottom: "15px" }}>
+                <button
+                  type="button"
+                  className={styles.tab}
+                  style={{ fontSize: "0.85rem", padding: 0 }}
+                  onClick={handlePasswordReset}
+                  disabled={authLoading}
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
+            )}
+
             {authError && (
               <p className={styles.authError} role="alert">{authError}</p>
+            )}
+            {authMsg && (
+              <p className={styles.authError} style={{ color: "#10b981", background: "rgba(16, 185, 129, 0.1)", border: "1px solid rgba(16, 185, 129, 0.2)" }} role="status">{authMsg}</p>
             )}
 
             <button

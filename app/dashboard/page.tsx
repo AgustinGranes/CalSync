@@ -97,6 +97,14 @@ function formatDatetime(isoStr: string): string {
     + " " + d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
+function toDatetimeLocal(isoStr: string): string {
+  if (!isoStr) return "";
+  const d = new Date(isoStr);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 const DEFAULT_CONFIG_FIELDS = {
   calendars: [] as CalendarSource[],
   alert1Minutes: 15,
@@ -156,7 +164,7 @@ export default function Dashboard() {
   // ── Edit individual event override ────────────────────────────────────────
   const [editingEvent, setEditingEvent] = useState<RawEvent | null>(null);
   const [editEvFields, setEditEvFields] = useState({
-    summary: "", location: "", url: "", description: "",
+    summary: "", location: "", url: "", description: "", start: "", end: ""
   });
 
   // Share/Receive
@@ -268,11 +276,10 @@ export default function Dashboard() {
   const showEmojis = cfg.showEmojis ?? false;
   const showCalName = cfg.showCalendarName ?? true;
   const deduplicateEvents = cfg.deduplicateEvents ?? false;
-  const sampleCal = cfg.calendars[0];
-  const sampleEvent = "Gran Premio de Melbourne";
+  const sampleEvent = "🏎️ Gran premio de Melbourne";
   const previewTitle = formatEventTitle(
-    showEmojis ? `🏎️ ${sampleEvent}` : sampleEvent,
-    sampleCal?.name ?? "FORMULA 1",
+    sampleEvent,
+    "Formula 1",
     showEmojis,
     showCalName
   );
@@ -391,6 +398,8 @@ export default function Dashboard() {
       location: ev.location,
       url: ev.url,
       description: ev.description,
+      start: toDatetimeLocal(ev.start),
+      end: toDatetimeLocal(ev.end),
     });
   };
 
@@ -402,11 +411,24 @@ export default function Dashboard() {
     if (editEvFields.location !== undefined) newOverride.location = editEvFields.location;
     if (editEvFields.url !== undefined) newOverride.url = editEvFields.url;
     if (editEvFields.description !== undefined) newOverride.description = editEvFields.description;
+    
+    if (editEvFields.start) newOverride.start = new Date(editEvFields.start).toISOString();
+    if (editEvFields.end) newOverride.end = new Date(editEvFields.end).toISOString();
 
     const updatedOverrides = { ...currentOverrides, [editingEvent.uid]: newOverride };
     await saveConfig({ ...config, eventOverrides: updatedOverrides }, "Evento actualizado");
     setEditingEvent(null);
     // Refresh preview
+    await openPreview("all", previewCalName).catch(() => {});
+  };
+
+  const handleDeleteEventOverride = async (ev: RawEvent) => {
+    if (!config) return;
+    const currentOverrides = config.eventOverrides ?? {};
+    const current = currentOverrides[ev.uid] || {};
+    const updatedOverrides = { ...currentOverrides, [ev.uid]: { ...current, deleted: true } };
+    await saveConfig({ ...config, eventOverrides: updatedOverrides }, "Evento eliminado");
+    if (editingEvent?.uid === ev.uid) setEditingEvent(null);
     await openPreview("all", previewCalName).catch(() => {});
   };
 
@@ -753,7 +775,7 @@ export default function Dashboard() {
                   <span className={styles.toggleThumb} />
                 </button>
                 <div className={styles.calInfo}>
-                  <span className={styles.calName}>Mostrar emojis en títulos</span>
+                  <span className={styles.calName}>Eliminar emojis en el título</span>
                   <span className={styles.calUrlFull}>Mantiene los emojis originales de cada evento</span>
                 </div>
               </div>
@@ -923,6 +945,16 @@ export default function Dashboard() {
                           <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" fill="currentColor" />
                         </svg>
                       </button>
+                      <button
+                        className={styles.editEventBtn}
+                        onClick={(e) => { e.stopPropagation(); handleDeleteEventOverride(ev); }}
+                        title="Eliminar este evento"
+                        aria-label={`Eliminar ${ev.summary}`}
+                      >
+                        <svg viewBox="0 0 20 20" fill="none" width="13" height="13">
+                          <path d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" fill="currentColor" />
+                        </svg>
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -961,6 +993,26 @@ export default function Dashboard() {
               </span>
             </div>
 
+            <div className={styles.formField}>
+              <label className={styles.label} htmlFor="ev-start">Fecha de inicio</label>
+              <input
+                id="ev-start"
+                className={styles.input}
+                type="datetime-local"
+                value={editEvFields.start}
+                onChange={(e) => setEditEvFields((f) => ({ ...f, start: e.target.value }))}
+              />
+            </div>
+            <div className={styles.formField}>
+              <label className={styles.label} htmlFor="ev-end">Fecha de fin</label>
+              <input
+                id="ev-end"
+                className={styles.input}
+                type="datetime-local"
+                value={editEvFields.end}
+                onChange={(e) => setEditEvFields((f) => ({ ...f, end: e.target.value }))}
+              />
+            </div>
             <div className={styles.formField}>
               <label className={styles.label} htmlFor="ev-summary">Título</label>
               <input
@@ -1012,6 +1064,9 @@ export default function Dashboard() {
               </button>
               <button className={styles.btnSecondary} onClick={handleResetEventOverride} disabled={saving}>
                 Restaurar original
+              </button>
+              <button className={styles.btnSecondary} onClick={() => handleDeleteEventOverride(editingEvent)} disabled={saving}>
+                Eliminar evento
               </button>
               <button className={styles.btnSecondary} onClick={() => setEditingEvent(null)}>
                 Cancelar

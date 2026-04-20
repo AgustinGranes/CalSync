@@ -71,20 +71,7 @@ function foldLine(line: string): string {
   return result;
 }
 
-/** Build a VALARM block for the given minutes offset */
-function buildValarm(minutes: number): string {
-  if (!minutes || minutes <= 0) return "";
-  const trigger = `-PT${Math.round(minutes)}M`;
-  return [
-    "BEGIN:VALARM",
-    `TRIGGER:${trigger}`,
-    "ACTION:DISPLAY",
-    "DESCRIPTION:Recordatorio",
-    "END:VALARM",
-  ].join("\r\n");
-}
-
-function buildVEvent(event: ParsedEvent, alert1: number, alert2: number): string {
+function buildVEvent(event: ParsedEvent): string {
   const lines: string[] = ["BEGIN:VEVENT"];
 
   lines.push(`UID:${event.uid}`);
@@ -113,12 +100,19 @@ function buildVEvent(event: ParsedEvent, alert1: number, alert2: number): string
     lines.push(`RRULE:${event.rrule}`);
   }
 
-  // Add alert VALARM blocks
-  const valarm1 = buildValarm(alert1);
-  if (valarm1) lines.push(valarm1);
+  // Add 15 mins alert
+  lines.push("BEGIN:VALARM");
+  lines.push("TRIGGER:-PT15M");
+  lines.push("ACTION:DISPLAY");
+  lines.push("DESCRIPTION:Recordatorio");
+  lines.push("END:VALARM");
 
-  const valarm2 = buildValarm(alert2);
-  if (valarm2 && alert2 !== alert1) lines.push(valarm2);
+  // Add 5 mins alert
+  lines.push("BEGIN:VALARM");
+  lines.push("TRIGGER:-PT5M");
+  lines.push("ACTION:DISPLAY");
+  lines.push("DESCRIPTION:Recordatorio");
+  lines.push("END:VALARM");
 
   lines.push("END:VEVENT");
   return lines.join("\r\n");
@@ -169,6 +163,8 @@ function parseICS(
 
         // Apply user override if present
         const ov = eventOverrides[uid] ?? {};
+        if (ov.deleted) continue;
+
         const rawSummary = (ov.summary !== undefined ? ov.summary : rawSummary0);
         const cleanSummary = showEmojis ? rawSummary : stripEmojis(rawSummary);
 
@@ -194,8 +190,8 @@ function parseICS(
           description: showEmojis ? description : stripEmojis(description),
           location: showEmojis ? location : stripEmojis(location),
           url,
-          start: startIso,
-          end: endDate.toISOString(),
+          start: ov.start !== undefined ? ov.start : startIso,
+          end: ov.end !== undefined ? ov.end : endDate.toISOString(),
           allDay,
           rrule: rruleStr,
         });
@@ -366,7 +362,7 @@ export async function GET(
   ];
 
   for (const event of allEvents) {
-    icsLines.push(buildVEvent(event, alert1, alert2));
+    icsLines.push(buildVEvent(event));
   }
 
   icsLines.push("END:VCALENDAR");

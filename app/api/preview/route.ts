@@ -90,12 +90,13 @@ function parseCalendarToRaw(
 
         // Apply override if present
         const ov = overrides[uid];
+        if (ov?.deleted) continue;
 
         events.push({
           uid,
           summary: ov?.summary !== undefined ? ov.summary : rawSummary,
-          start: startIso,
-          end: endDate.toISOString(),
+          start: ov?.start !== undefined ? ov.start : startIso,
+          end: ov?.end !== undefined ? ov.end : (endDate ? endDate.toISOString() : startIso),
           allDay,
           location: ov?.location !== undefined ? ov.location : (event.location || ""),
           url: ov?.url !== undefined ? ov.url : (vevent.getFirstPropertyValue("url") || ""),

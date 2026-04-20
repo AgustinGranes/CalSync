@@ -13,6 +13,9 @@ export interface EventOverride {
   location?: string;
   url?: string;
   description?: string;
+  start?: string;
+  end?: string;
+  deleted?: boolean;
 }
 
 export interface UserConfig {
