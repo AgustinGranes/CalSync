@@ -1002,7 +1002,18 @@ export default function Dashboard() {
                 className={styles.input}
                 type="datetime-local"
                 value={editEvFields.start}
-                onChange={(e) => setEditEvFields((f) => ({ ...f, start: e.target.value }))}
+                onChange={(e) => {
+                  const newStart = e.target.value;
+                  setEditEvFields((f) => {
+                    const dStart = new Date(newStart);
+                    const dEnd = new Date(f.end);
+                    let newEnd = f.end;
+                    if (!isNaN(dStart.getTime()) && !isNaN(dEnd.getTime()) && dStart >= dEnd) {
+                      newEnd = toDatetimeLocal(new Date(dStart.getTime() + 60 * 60 * 1000).toISOString());
+                    }
+                    return { ...f, start: newStart, end: newEnd };
+                  });
+                }}
               />
             </div>
             <div className={styles.formField}>
@@ -1011,8 +1022,20 @@ export default function Dashboard() {
                 id="ev-end"
                 className={styles.input}
                 type="datetime-local"
+                min={editEvFields.start}
                 value={editEvFields.end}
-                onChange={(e) => setEditEvFields((f) => ({ ...f, end: e.target.value }))}
+                onChange={(e) => {
+                  const newEnd = e.target.value;
+                  setEditEvFields((f) => {
+                    const dStart = new Date(f.start);
+                    const dEnd = new Date(newEnd);
+                    let finalEnd = newEnd;
+                    if (!isNaN(dStart.getTime()) && !isNaN(dEnd.getTime()) && dEnd <= dStart) {
+                      finalEnd = toDatetimeLocal(new Date(dStart.getTime() + 60 * 1000).toISOString());
+                    }
+                    return { ...f, end: finalEnd };
+                  });
+                }}
               />
             </div>
             <div className={styles.formField}>
