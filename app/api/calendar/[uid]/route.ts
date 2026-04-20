@@ -4,6 +4,9 @@ import ICAL from "ical.js";
 import { getAdminFirestore } from "@/lib/firebase-admin";
 import { UserConfig, EventOverride } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ParsedEvent {
@@ -115,21 +118,12 @@ function buildVEvent(event: ParsedEvent, alert1: number, alert2: number): string
     const trigger = formatTrigger(minutes);
     const alarmUid = `${event.uid}-alarm-${idSuffix}`;
     
-    // Display Alarm
     lines.push("BEGIN:VALARM");
-    lines.push(`UID:${alarmUid}-display`);
-    lines.push(`X-WR-ALARMUID:${alarmUid}-display`);
+    lines.push(`X-WR-ALARMUID:${alarmUid}`);
     lines.push(`TRIGGER:${trigger}`);
     lines.push("ACTION:DISPLAY");
-    lines.push(foldLine(`DESCRIPTION:Recordatorio de ${event.summary}`));
-    lines.push("END:VALARM");
-
-    // Audio Alarm (Better for iOS/macOS bypass)
-    lines.push("BEGIN:VALARM");
-    lines.push(`UID:${alarmUid}-audio`);
-    lines.push(`X-WR-ALARMUID:${alarmUid}-audio`);
-    lines.push(`TRIGGER:${trigger}`);
-    lines.push("ACTION:AUDIO");
+    lines.push(foldLine(`DESCRIPTION:Recordatorio: ${event.summary}`));
+    lines.push(foldLine(`SUMMARY:Recordatorio: ${event.summary}`));
     lines.push("X-APPLE-DEFAULT-ALARM:TRUE");
     lines.push("END:VALARM");
   };
