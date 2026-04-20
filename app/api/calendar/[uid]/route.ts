@@ -71,7 +71,7 @@ function foldLine(line: string): string {
   return result;
 }
 
-function buildVEvent(event: ParsedEvent): string {
+function buildVEvent(event: ParsedEvent, alert1: number, alert2: number): string {
   const lines: string[] = ["BEGIN:VEVENT"];
 
   lines.push(`UID:${event.uid}`);
@@ -100,19 +100,21 @@ function buildVEvent(event: ParsedEvent): string {
     lines.push(`RRULE:${event.rrule}`);
   }
 
-  // Add 15 mins alert
-  lines.push("BEGIN:VALARM");
-  lines.push("TRIGGER:-PT15M");
-  lines.push("ACTION:DISPLAY");
-  lines.push("DESCRIPTION:Recordatorio");
-  lines.push("END:VALARM");
+  if (alert1 > 0) {
+    lines.push("BEGIN:VALARM");
+    lines.push(`TRIGGER:-PT${alert1}M`);
+    lines.push("ACTION:DISPLAY");
+    lines.push("DESCRIPTION:Recordatorio");
+    lines.push("END:VALARM");
+  }
 
-  // Add 5 mins alert
-  lines.push("BEGIN:VALARM");
-  lines.push("TRIGGER:-PT5M");
-  lines.push("ACTION:DISPLAY");
-  lines.push("DESCRIPTION:Recordatorio");
-  lines.push("END:VALARM");
+  if (alert2 > 0) {
+    lines.push("BEGIN:VALARM");
+    lines.push(`TRIGGER:-PT${alert2}M`);
+    lines.push("ACTION:DISPLAY");
+    lines.push("DESCRIPTION:Recordatorio");
+    lines.push("END:VALARM");
+  }
 
   lines.push("END:VEVENT");
   return lines.join("\r\n");
@@ -373,7 +375,7 @@ export async function GET(
   ];
 
   for (const event of allEvents) {
-    icsLines.push(buildVEvent(event));
+    icsLines.push(buildVEvent(event, alert1, alert2));
   }
 
   icsLines.push("END:VCALENDAR");
