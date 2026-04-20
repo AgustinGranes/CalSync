@@ -114,23 +114,25 @@ function buildVEvent(event: ParsedEvent, alert1: number, alert2: number): string
     lines.push(`RRULE:${event.rrule}`);
   }
 
-  const addAlarm = (minutes: number, idSuffix: string) => {
+  const addAlarm = (minutes: number, label: string) => {
     if (minutes <= 0) return;
     const trigger = formatTrigger(minutes);
-    const alarmUid = `${event.uid}-alarm-${idSuffix}`;
+    // Hashed-like UID for the alarm to keep it stable
+    const alarmUid = `${event.uid.slice(-10)}-${label.replace(/\s+/g, "")}`;
     
     lines.push("BEGIN:VALARM");
-    lines.push(`X-WR-ALARMUID:${alarmUid}`);
-    lines.push(`TRIGGER:${trigger}`);
     lines.push("ACTION:DISPLAY");
-    lines.push(foldLine(`DESCRIPTION:Recordatorio: ${event.summary}`));
-    lines.push(foldLine(`SUMMARY:Recordatorio: ${event.summary}`));
+    lines.push(`DESCRIPTION:${label}`);
+    lines.push(`SUMMARY:${label}`);
+    // Explicitly using VALUE=DURATION for some older iCal parsers
+    lines.push(`TRIGGER;VALUE=DURATION:${trigger}`);
+    lines.push(`X-WR-ALARMUID:${alarmUid}`);
     lines.push("X-APPLE-DEFAULT-ALARM:TRUE");
     lines.push("END:VALARM");
   };
 
-  addAlarm(alert1, "1");
-  addAlarm(alert2, "2");
+  addAlarm(alert1, "Primer Alerta");
+  addAlarm(alert2, "Segunda Alerta");
 
   lines.push("END:VEVENT");
   return lines.join("\r\n");
