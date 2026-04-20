@@ -440,6 +440,7 @@ export default function Dashboard() {
     delete updated[editingEvent.uid];
     await saveConfig({ ...config, eventOverrides: updated }, "Evento restaurado");
     setEditingEvent(null);
+    await openPreview(previewCalId, previewCalName).catch(() => {});
   };
 
   // ─── Share / Receive ──────────────────────────────────────────────────────
