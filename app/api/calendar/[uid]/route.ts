@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 // @ts-ignore — ical.js ships its own types
 import ICAL from "ical.js";
 import { getAdminFirestore } from "@/lib/firebase-admin";
-import { UserConfig } from "@/lib/types";
+import { UserConfig, EventOverride } from "@/lib/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -123,7 +123,7 @@ function parseICS(
   calendarName: string,
   showEmojis: boolean,
   showCalendarName: boolean,
-  eventOverrides: Record<string, { summary?: string; location?: string; url?: string; description?: string }>
+  eventOverrides: Record<string, EventOverride>
 ): ParsedEvent[] {
   const events: ParsedEvent[] = [];
   try {
