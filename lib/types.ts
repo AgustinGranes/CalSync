@@ -7,6 +7,14 @@ export interface CalendarSource {
   enabled: boolean;
 }
 
+/** Per-event user overrides, stored by ICS event UID */
+export interface EventOverride {
+  summary?: string;
+  location?: string;
+  url?: string;
+  description?: string;
+}
+
 export interface UserConfig {
   uid: string;
   email: string | null;
@@ -17,6 +25,8 @@ export interface UserConfig {
   alert2Minutes: number;
   showEmojis: boolean;       // Keep original emojis in titles
   showCalendarName: boolean; // Prepend CALENDAR: before event title
+  /** Per-event field overrides keyed by ICS event UID */
+  eventOverrides?: Record<string, EventOverride>;
   createdAt: number;
   updatedAt: number;
 }

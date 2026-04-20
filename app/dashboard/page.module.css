@@ -288,7 +288,16 @@
 }
 
 /* ─── Collapsible Calendar Section ──────────────────────────────────────── */
-.collapsibleHeader {
+/* Header row — replaces the old single-button collapsibleHeader */
+.collapsibleHeaderRow {
+  display: flex;
+  align-items: center;
+  /* NO gap: toggle button gets flex:1, btnViewAll is beside it */
+}
+
+/* Left side: expands/collapses the body */
+.collapsibleToggle {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -296,9 +305,33 @@
   border: none;
   cursor: pointer;
   padding: 0;
-  width: 100%;
   text-align: left;
-  margin-bottom: -4px;
+  min-width: 0;
+}
+
+/* "Ver todo" button — always visible next to the chevron */
+.btnViewAll {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: rgba(124, 58, 237, 0.10);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  border-radius: var(--radius-md);
+  color: var(--purple-light);
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: var(--font-inter);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: 10px;
+  transition: all 0.15s ease;
+}
+
+.btnViewAll:hover {
+  background: rgba(124, 58, 237, 0.2);
+  border-color: rgba(124, 58, 237, 0.5);
 }
 
 .cardHeaderInner {
@@ -325,10 +358,13 @@
   display: grid;
   grid-template-rows: 0fr;
   transition: grid-template-rows 0.3s ease;
+  /* Negative margin cancels the parent card's gap when collapsed */
+  margin-top: -14px;
 }
 
 .collapsibleBodyOpen {
   grid-template-rows: 1fr;
+  margin-top: 0;
 }
 
 /* Single direct child — required for grid 0fr trick */
@@ -843,7 +879,7 @@
 
 .eventRow {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
   padding: 7px 0;
   border-bottom: 1px solid rgba(255,255,255,0.04);
@@ -863,9 +899,126 @@
   font-size: 0.85rem;
   color: var(--text-primary);
   line-height: 1.4;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* ─── Receive Popup ──────────────────────────────────────────────────────── */
+.editEventBtn {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(124, 58, 237, 0.08);
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  border-radius: 6px;
+  color: var(--purple-light);
+  cursor: pointer;
+  opacity: 0.5;
+  transition: all 0.15s;
+}
+
+.editEventBtn:hover { opacity: 1; background: rgba(124, 58, 237, 0.2); }
+
+/* ─── Edit Event Override Modal ────────────────────────────────────────────── */
+.editEventModal { max-width: 480px; }
+
+.editEventHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.editEventSource {
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  margin: 2px 0 0;
+}
+
+.editEventMeta {
+  padding: 9px 12px;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.textarea {
+  padding: 10px 13px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-family: var(--font-inter);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+  resize: vertical;
+  min-height: 70px;
+}
+
+.textarea:focus {
+  border-color: var(--purple-light);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+}
+
+/* ─── Edit Event Modal ───────────────────────────────────────────────────── */
+.editEventModal {
+  max-width: 480px;
+}
+
+.editEventHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.editEventSource {
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  margin: 2px 0 0;
+}
+
+.editEventMeta {
+  display: flex;
+  gap: 8px;
+  padding: 9px 12px;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* Textarea (reuses .input look) */
+.textarea {
+  padding: 10px 13px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-family: var(--font-inter);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+  resize: vertical;
+  min-height: 70px;
+}
+
+.textarea:focus {
+  border-color: var(--purple-light);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+}
 .receiveHeader {
   display: flex;
   align-items: center;
