@@ -139,6 +139,7 @@ export default function Dashboard() {
 
   // Share/Receive
   const [receivePopup, setReceivePopup] = useState(false);
+  const [receiveUrl, setReceiveUrl] = useState("");
   const [externalData, setExternalData] = useState<ExternalCalData | null>(null);
   const [externalLoading, setExternalLoading] = useState(false);
   const [externalError, setExternalError] = useState("");
@@ -332,44 +333,51 @@ export default function Dashboard() {
   const handleShare = async () => {
     if (!user || !origin) return;
     const link = `${origin}/api/calendar/${user.uid}`;
-    const msg = `¡Seleccioná los calendarios que quieras de mi CalSync!\n${link}`;
+    const msg = `¡Seleccióna los calendarios que quieras de mi CalSync! (Copia el enlace al portapapeles): ${link}`;
     await navigator.clipboard.writeText(msg);
     showToast("✓ Enlace copiado al portapapeles");
   };
 
+  // Opens popup, tries clipboard, pre-fills input — runs on every click
   const handleReceiveInit = async () => {
     setExternalData(null);
     setExternalError("");
     setSelectedExtIds(new Set());
+    setReceiveUrl("");
     setReceivePopup(true);
-    setExternalLoading(true);
+    // Always re-read clipboard
     try {
       const text = await navigator.clipboard.readText();
-      const match = text.match(/\/api\/calendar\/([a-zA-Z0-9_-]+)/);
+      if (text.includes("/api/calendar/")) {
+        setReceiveUrl(text.trim());
+      }
+    } catch {
+      // Clipboard may be denied — user can paste manually
+    }
+  };
+
+  const lookupCalSync = async (urlOrText: string) => {
+    setExternalData(null);
+    setExternalError("");
+    setExternalLoading(true);
+    try {
+      const match = urlOrText.match(/\/api\/calendar\/([a-zA-Z0-9_-]+)/);
       if (!match) {
-        setExternalError("El portapapeles no contiene un enlace CalSync válido.");
-        setExternalLoading(false);
+        setExternalError("No contiene un enlace CalSync válido.");
         return;
       }
       const uid = match[1];
       if (uid === user?.uid) {
         setExternalError("No podés importar tu propio CalSync.");
-        setExternalLoading(false);
         return;
       }
       const res = await fetch(`/api/user/${uid}`);
-      if (!res.ok) {
-        setExternalError("No se encontró ese CalSync.");
-        setExternalLoading(false);
-        return;
-      }
+      if (!res.ok) { setExternalError("No se encontró ese CalSync."); return; }
       const data: ExternalCalData = await res.json();
       if (!data.calendars || data.calendars.length === 0) {
         setExternalError("Este CalSync está vacío o no tiene calendarios activos.");
-        setExternalLoading(false);
         return;
       }
-      // Pre-select calendars the user already has (same URL)
       const existingUrls = new Set((config?.calendars || []).map((c) => c.url));
       const pre = new Set<string>();
       for (const cal of data.calendars) {
@@ -378,7 +386,7 @@ export default function Dashboard() {
       setExternalData(data);
       setSelectedExtIds(pre);
     } catch {
-      setExternalError("No se pudo leer el portapapeles. Pegá el enlace manualmente o intentá de nuevo.");
+      setExternalError("Error al buscar el CalSync. Intentá de nuevo.");
     } finally {
       setExternalLoading(false);
     }
@@ -554,70 +562,72 @@ export default function Dashboard() {
             </svg>
           </button>
 
-          {/* Body — collapsible */}
+          {/* Body — collapsible (must have ONE direct child for grid trick) */}
           <div className={`${styles.collapsibleBody} ${calsExpanded ? styles.collapsibleBodyOpen : ""}`}>
-            {cfg.calendars.length > 0 && (
-              <ul className={styles.calList} aria-label="Lista de calendarios">
-                {cfg.calendars.map((cal) => (
-                  <li key={cal.id} className={`${styles.calItem} ${!cal.enabled ? styles.calItemDisabled : ""}`}>
-                    <div className={styles.calItemLeft}>
-                      <button
-                        className={`${styles.toggleBtn} ${cal.enabled ? styles.toggleOn : styles.toggleOff}`}
-                        onClick={() => handleToggleCalendar(cal.id)}
-                        aria-label={cal.enabled ? "Desactivar calendario" : "Activar calendario"}
-                      >
-                        <span className={styles.toggleThumb} />
-                      </button>
-                      <div className={styles.calInfo}>
-                        <button className={styles.calNameBtn} onClick={() => handleOpenPreview(cal)}>
-                          {cal.name}
+            <div className={styles.collapsibleBodyInner}>
+              {cfg.calendars.length > 0 && (
+                <ul className={styles.calList} aria-label="Lista de calendarios">
+                  {cfg.calendars.map((cal) => (
+                    <li key={cal.id} className={`${styles.calItem} ${!cal.enabled ? styles.calItemDisabled : ""}`}>
+                      <div className={styles.calItemLeft}>
+                        <button
+                          className={`${styles.toggleBtn} ${cal.enabled ? styles.toggleOn : styles.toggleOff}`}
+                          onClick={() => handleToggleCalendar(cal.id)}
+                          aria-label={cal.enabled ? "Desactivar calendario" : "Activar calendario"}
+                        >
+                          <span className={styles.toggleThumb} />
                         </button>
-                        <span className={styles.calUrl}>{cal.url.replace(/^https?:\/\//, "")}</span>
+                        <div className={styles.calInfo}>
+                          <button className={styles.calNameBtn} onClick={() => handleOpenPreview(cal)}>
+                            {cal.name}
+                          </button>
+                          <span className={styles.calUrl}>{cal.url.replace(/^https?:\/\//, "")}</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className={styles.calActions}>
-                      <button className={styles.iconBtn} onClick={() => handleOpenEdit(cal)} aria-label={`Editar ${cal.name}`} title="Editar">
-                        <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
-                          <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" fill="currentColor" />
-                        </svg>
-                      </button>
-                      <button className={`${styles.iconBtn} ${styles.iconBtnDanger}`} onClick={() => handleDeleteCalendar(cal.id)} aria-label={`Eliminar ${cal.name}`} title="Eliminar">
-                        <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
-                          <path d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" fill="currentColor" />
-                        </svg>
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
+                      <div className={styles.calActions}>
+                        <button className={styles.iconBtn} onClick={() => handleOpenEdit(cal)} aria-label={`Editar ${cal.name}`} title="Editar">
+                          <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" fill="currentColor" />
+                          </svg>
+                        </button>
+                        <button className={`${styles.iconBtn} ${styles.iconBtnDanger}`} onClick={() => handleDeleteCalendar(cal.id)} aria-label={`Eliminar ${cal.name}`} title="Eliminar">
+                          <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+                            <path d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" fill="currentColor" />
+                          </svg>
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
 
-            {addingCal ? (
-              <div className={styles.addForm}>
-                <div className={styles.formField}>
-                  <label className={styles.label} htmlFor="cal-name">Nombre del calendario</label>
-                  <input id="cal-name" className={styles.input} type="text" placeholder="ej: Personal, Trabajo, Formula 1" value={newCalName} onChange={(e) => setNewCalName(e.target.value)} autoFocus />
+              {addingCal ? (
+                <div className={styles.addForm}>
+                  <div className={styles.formField}>
+                    <label className={styles.label} htmlFor="cal-name">Nombre del calendario</label>
+                    <input id="cal-name" className={styles.input} type="text" placeholder="ej: Personal, Trabajo, Formula 1" value={newCalName} onChange={(e) => setNewCalName(e.target.value)} autoFocus />
+                  </div>
+                  <div className={styles.formField}>
+                    <label className={styles.label} htmlFor="cal-url">URL del calendario (.ics)</label>
+                    <input id="cal-url" className={styles.input} type="url" placeholder="https://... o webcal://..." value={newCalUrl} onChange={(e) => setNewCalUrl(e.target.value)} />
+                  </div>
+                  {addError && <p className={styles.error}>{addError}</p>}
+                  <div className={styles.formActions}>
+                    <button id="btn-confirm-add" className={styles.btnPrimary} onClick={handleAddCalendar} disabled={saving}>
+                      {saving ? "Guardando..." : "Agregar calendario"}
+                    </button>
+                    <button className={styles.btnSecondary} onClick={() => { setAddingCal(false); setAddError(""); }}>Cancelar</button>
+                  </div>
                 </div>
-                <div className={styles.formField}>
-                  <label className={styles.label} htmlFor="cal-url">URL del calendario (.ics)</label>
-                  <input id="cal-url" className={styles.input} type="url" placeholder="https://... o webcal://..." value={newCalUrl} onChange={(e) => setNewCalUrl(e.target.value)} />
-                </div>
-                {addError && <p className={styles.error}>{addError}</p>}
-                <div className={styles.formActions}>
-                  <button id="btn-confirm-add" className={styles.btnPrimary} onClick={handleAddCalendar} disabled={saving}>
-                    {saving ? "Guardando..." : "Agregar calendario"}
-                  </button>
-                  <button className={styles.btnSecondary} onClick={() => { setAddingCal(false); setAddError(""); }}>Cancelar</button>
-                </div>
-              </div>
-            ) : (
-              <button id="btn-add-calendar" className={styles.btnAddCal} onClick={() => setAddingCal(true)}>
-                <svg viewBox="0 0 20 20" fill="none" width="16" height="16" aria-hidden>
-                  <path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" fill="currentColor" />
-                </svg>
-                Agregar calendario
-              </button>
-            )}
+              ) : (
+                <button id="btn-add-calendar" className={styles.btnAddCal} onClick={() => setAddingCal(true)}>
+                  <svg viewBox="0 0 20 20" fill="none" width="16" height="16" aria-hidden>
+                    <path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" fill="currentColor" />
+                  </svg>
+                  Agregar calendario
+                </button>
+              )}
+            </div>
           </div>
         </section>
 
@@ -666,37 +676,39 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className={styles.calItem}>
-            <div className={styles.calItemLeft}>
-              <button
-                className={`${styles.toggleBtn} ${showEmojis ? styles.toggleOn : styles.toggleOff}`}
-                onClick={() => handleToggleFormat("showEmojis")}
-                aria-label="Activar emojis en títulos"
-              >
-                <span className={styles.toggleThumb} />
-              </button>
-              <div className={styles.calInfo}>
-                <span className={styles.calName}>Mostrar emojis en títulos</span>
-                <span className={styles.calUrl}>Mantiene los emojis originales de cada evento</span>
+          {/* Format toggles — wrapped in calList for consistent styling */}
+          <ul className={styles.calList}>
+            <li className={styles.calItem}>
+              <div className={styles.calItemLeft}>
+                <button
+                  className={`${styles.toggleBtn} ${showEmojis ? styles.toggleOn : styles.toggleOff}`}
+                  onClick={() => handleToggleFormat("showEmojis")}
+                  aria-label="Activar emojis en títulos"
+                >
+                  <span className={styles.toggleThumb} />
+                </button>
+                <div className={styles.calInfo}>
+                  <span className={styles.calName}>Mostrar emojis en títulos</span>
+                  <span className={styles.calUrlFull}>Mantiene los emojis originales de cada evento</span>
+                </div>
               </div>
-            </div>
-          </div>
-
-          <div className={styles.calItem} style={{ borderBottom: "none" }}>
-            <div className={styles.calItemLeft}>
-              <button
-                className={`${styles.toggleBtn} ${showCalName ? styles.toggleOn : styles.toggleOff}`}
-                onClick={() => handleToggleFormat("showCalendarName")}
-                aria-label="Mostrar nombre del calendario"
-              >
-                <span className={styles.toggleThumb} />
-              </button>
-              <div className={styles.calInfo}>
-                <span className={styles.calName}>Mostrar nombre del calendario</span>
-                <span className={styles.calUrl}>Prefija cada evento con el nombre del calendario</span>
+            </li>
+            <li className={`${styles.calItem} ${styles.calItemNoBorder}`}>
+              <div className={styles.calItemLeft}>
+                <button
+                  className={`${styles.toggleBtn} ${showCalName ? styles.toggleOn : styles.toggleOff}`}
+                  onClick={() => handleToggleFormat("showCalendarName")}
+                  aria-label="Mostrar nombre del calendario"
+                >
+                  <span className={styles.toggleThumb} />
+                </button>
+                <div className={styles.calInfo}>
+                  <span className={styles.calName}>Mostrar nombre del calendario</span>
+                  <span className={styles.calUrlFull}>Prefija cada evento con el nombre del calendario</span>
+                </div>
               </div>
-            </div>
-          </div>
+            </li>
+          </ul>
 
           {/* Preview */}
           <div className={styles.formatPreview}>
@@ -817,13 +829,39 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Receive CalSync Popup ────────────────────────────────────────── */}
+      {/* ── Receive CalSync Popup ────────────────────────────────────── */}
       {receivePopup && (
         <div className={styles.modalOverlay} onClick={() => { setReceivePopup(false); setExternalData(null); }}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal aria-label="Recibir calendarios">
-            <h3 className={styles.modalTitle}>Recibir CalSync</h3>
+            <div className={styles.receiveHeader}>
+              <h3 className={styles.modalTitle}>Recibir CalSync</h3>
+              <button className={styles.closeBtn} onClick={() => { setReceivePopup(false); setExternalData(null); }} aria-label="Cerrar">
+                <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
 
-            {externalLoading && <div className={styles.spinner} style={{ margin: "20px auto" }} />}
+            {/* Manual URL input — always visible */}
+            <div className={styles.receiveInputRow}>
+              <input
+                className={styles.input}
+                type="url"
+                placeholder="Pegá el enlace CalSync aquí..."
+                value={receiveUrl}
+                onChange={(e) => setReceiveUrl(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") lookupCalSync(receiveUrl); }}
+              />
+              <button
+                className={styles.btnPrimary}
+                onClick={() => lookupCalSync(receiveUrl)}
+                disabled={externalLoading || !receiveUrl.trim()}
+              >
+                Buscar
+              </button>
+            </div>
+
+            {externalLoading && <div className={styles.spinner} style={{ margin: "16px auto" }} />}
 
             {externalError && !externalLoading && (
               <p className={styles.receiveError}>{externalError}</p>

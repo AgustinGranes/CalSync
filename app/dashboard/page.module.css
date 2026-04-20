@@ -325,15 +325,20 @@
   display: grid;
   grid-template-rows: 0fr;
   transition: grid-template-rows 0.3s ease;
-  overflow: hidden;
 }
 
 .collapsibleBodyOpen {
   grid-template-rows: 1fr;
 }
 
-.collapsibleBody > * {
+/* Single direct child — required for grid 0fr trick */
+.collapsibleBodyInner {
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  padding-top: 12px;
 }
 
 /* Use a wrapper div inside collapsibleBody */
@@ -409,6 +414,19 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 220px;
+}
+
+/* Full-wrap variant for format description text */
+.calUrlFull {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.calItemNoBorder {
+  border-bottom: none !important;
 }
 
 .calActions { display: flex; gap: 4px; flex-shrink: 0; }
@@ -848,6 +866,21 @@
 }
 
 /* ─── Receive Popup ──────────────────────────────────────────────────────── */
+.receiveHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.receiveInputRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.receiveInputRow .input { flex: 1; }
+
 .receiveError {
   font-size: 0.85rem;
   color: #f87171;
