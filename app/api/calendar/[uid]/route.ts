@@ -71,6 +71,16 @@ function foldLine(line: string): string {
   return result;
 }
 
+function formatTrigger(minutes: number): string {
+  if (minutes % 1440 === 0) {
+    return `-P${minutes / 1440}D`;
+  } else if (minutes % 60 === 0) {
+    return `-PT${minutes / 60}H`;
+  } else {
+    return `-PT${minutes}M`;
+  }
+}
+
 function buildVEvent(event: ParsedEvent, alert1: number, alert2: number): string {
   const lines: string[] = ["BEGIN:VEVENT"];
 
@@ -102,17 +112,19 @@ function buildVEvent(event: ParsedEvent, alert1: number, alert2: number): string
 
   if (alert1 > 0) {
     lines.push("BEGIN:VALARM");
-    lines.push(`TRIGGER:-PT${alert1}M`);
+    lines.push(`TRIGGER:${formatTrigger(alert1)}`);
     lines.push("ACTION:DISPLAY");
     lines.push("DESCRIPTION:Recordatorio");
+    lines.push("X-APPLE-DEFAULT-ALARM:TRUE");
     lines.push("END:VALARM");
   }
 
   if (alert2 > 0) {
     lines.push("BEGIN:VALARM");
-    lines.push(`TRIGGER:-PT${alert2}M`);
+    lines.push(`TRIGGER:${formatTrigger(alert2)}`);
     lines.push("ACTION:DISPLAY");
     lines.push("DESCRIPTION:Recordatorio");
+    lines.push("X-APPLE-DEFAULT-ALARM:TRUE");
     lines.push("END:VALARM");
   }
 
