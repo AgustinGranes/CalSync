@@ -8,7 +8,9 @@ import { UserConfig } from "@/lib/types";
 
 interface ParsedEvent {
   uid: string;
-  summary: string;
+  rawSummary: string;   // base title BEFORE calendar prefix (for dedup key)
+  calendarName: string; // source calendar name (for prefix building)
+  summary: string;      // final formatted summary (written to ICS)
   description: string;
   location: string;
   url: string;
@@ -126,7 +128,8 @@ function parseICS(
   icsText: string,
   calendarName: string,
   showEmojis: boolean,
-  showCalendarName: boolean
+  showCalendarName: boolean,
+  eventOverrides: Record<string, { summary?: string; location?: string; url?: string; description?: string }>
 ): ParsedEvent[] {
   const events: ParsedEvent[] = [];
   try {
@@ -159,10 +162,17 @@ function parseICS(
             .trim();
         }
 
-        // Format summary based on user settings
-        const rawSummary = event.summary || "Sin t\u00edtulo";
+        // Determine UID (consistent fallback for overrides)
+        const rawSummary0 = event.summary || "Sin t\u00edtulo";
+        const startIso = startDate.toISOString();
+        const uid = event.uid || `calsync-${calendarName}-${startIso}-${rawSummary0.slice(0, 20)}`;
+
+        // Apply user override if present
+        const ov = eventOverrides[uid] ?? {};
+        const rawSummary = (ov.summary !== undefined ? ov.summary : rawSummary0);
         const cleanSummary = showEmojis ? rawSummary : stripEmojis(rawSummary);
 
+        // Build formatted summary (prefix added later if dedup is off; kept here if dedup is on)
         let newSummary: string;
         if (showCalendarName) {
           const cleanCalName = (showEmojis ? calendarName : stripEmojis(calendarName)).toUpperCase().trim();
@@ -171,14 +181,20 @@ function parseICS(
           newSummary = cleanSummary;
         }
 
+        const location = ov.location !== undefined ? ov.location : (event.location || "");
+        const description = ov.description !== undefined ? ov.description : (event.description || "");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const url = ov.url !== undefined ? ov.url : ((event as any).url || vevent.getFirstPropertyValue("url") || "");
+
         events.push({
-          uid: event.uid || `calsync-${Math.random().toString(36).slice(2)}`,
+          uid,
+          rawSummary: cleanSummary, // emoji-processed base title, no prefix
+          calendarName,
           summary: newSummary,
-          description: showEmojis ? (event.description || "") : stripEmojis(event.description || ""),
-          location: showEmojis ? (event.location || "") : stripEmojis(event.location || ""),
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          url: (event as any).url || "",
-          start: startDate.toISOString(),
+          description: showEmojis ? description : stripEmojis(description),
+          location: showEmojis ? location : stripEmojis(location),
+          url,
+          start: startIso,
           end: endDate.toISOString(),
           allDay,
           rrule: rruleStr,
@@ -191,6 +207,51 @@ function parseICS(
     console.error("[CalSync] Failed to parse ICS for", calendarName, parseErr);
   }
   return events;
+}
+
+/**
+ * Deduplication: group events by (normalizedBaseTitle, startISO).
+ * If multiple calendars share the same event, merge their calendar
+ * name prefixes: "ARSENAL y CHELSEA: FA Cup"
+ */
+function deduplicateByTitle(
+  events: ParsedEvent[],
+  showCalendarName: boolean,
+  showEmojis: boolean
+): ParsedEvent[] {
+  // key = normalised title (lowercase, no extra spaces) + start datetime
+  const groups = new Map<string, ParsedEvent[]>();
+
+  for (const ev of events) {
+    const normalised = ev.rawSummary.toLowerCase().replace(/\s+/g, " ").trim();
+    const key = `${normalised}|${ev.start}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(ev);
+  }
+
+  const result: ParsedEvent[] = [];
+  for (const group of groups.values()) {
+    if (group.length === 1) {
+      result.push(group[0]);
+      continue;
+    }
+    // Merge: collect unique calendar names in stable order
+    const calNames = [...new Set(group.map((e) => e.calendarName))];
+    const base = group[0];
+
+    let mergedSummary: string;
+    if (showCalendarName) {
+      const prefix = calNames
+        .map((n) => (showEmojis ? n : stripEmojis(n)).toUpperCase().trim())
+        .join(" y ");
+      mergedSummary = `${prefix}: ${base.rawSummary}`;
+    } else {
+      mergedSummary = base.rawSummary;
+    }
+
+    result.push({ ...base, summary: mergedSummary });
+  }
+  return result;
 }
 
 // ─── Route ────────────────────────────────────────────────────────────────────
@@ -261,14 +322,21 @@ export async function GET(
   // Parse and merge events
   const showEmojis = userConfig.showEmojis ?? false;
   const showCalName = userConfig.showCalendarName ?? true;
-  const allEvents: ParsedEvent[] = [];
+  const deduplicate = userConfig.deduplicateEvents ?? false;
+  const overrides = userConfig.eventOverrides ?? {};
+  let allEvents: ParsedEvent[] = [];
   for (const result of fetchResults) {
     if (result.status === "rejected") {
       console.error("[CalSync] Failed to fetch calendar:", result.reason);
       continue;
     }
     const { cal, text } = result.value;
-    allEvents.push(...parseICS(text, cal.name, showEmojis, showCalName));
+    allEvents.push(...parseICS(text, cal.name, showEmojis, showCalName, overrides));
+  }
+
+  // Deduplicate if option is enabled
+  if (deduplicate) {
+    allEvents = deduplicateByTitle(allEvents, showCalName, showEmojis);
   }
 
   const alert1 = userConfig.alert1Minutes ?? 15;

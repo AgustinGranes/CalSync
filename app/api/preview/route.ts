@@ -25,6 +25,41 @@ function makeUid(calName: string, startIso: string, summary: string): string {
   return `calsync-${calName}-${startIso}-${summary.slice(0, 20)}`;
 }
 
+function stripEmojisServer(str: string): string {
+  if (!str) return str;
+  return str
+    .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, "")
+    .replace(/[\u200D\uFE0F\u20E3\u{1F3FB}-\u{1F3FF}]/gu, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+/**
+ * Merge duplicate events across calendars for the preview list.
+ * Key = normalised summary (lower, no extra spaces) + start ISO.
+ * Merged event: calendarName becomes "CAL1 y CAL2", summary unchanged.
+ */
+function deduplicatePreviewEvents(
+  events: RawEvent[],
+  showEmojis: boolean
+): RawEvent[] {
+  const groups = new Map<string, RawEvent[]>();
+  for (const ev of events) {
+    const base = showEmojis ? ev.summary : stripEmojisServer(ev.summary);
+    const key = `${base.toLowerCase().replace(/\s+/g, " ").trim()}|${ev.start}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(ev);
+  }
+  const result: RawEvent[] = [];
+  for (const group of groups.values()) {
+    if (group.length === 1) { result.push(group[0]); continue; }
+    const calNames = [...new Set(group.map((e) => e.calendarName))];
+    // Merge calendarName for display ("ARSENAL y CHELSEA")
+    result.push({ ...group[0], calendarName: calNames.join(" y ") });
+  }
+  return result;
+}
+
 /** Parse a single ICS text into RawEvents, applying eventOverrides */
 function parseCalendarToRaw(
   text: string,
@@ -99,26 +134,29 @@ export async function GET(request: Request) {
     // ── All calendars mode ──────────────────────────────────────────────────
     if (calId === "all") {
       const enabledCals = config.calendars.filter((c) => c.enabled);
-      const allEvents: RawEvent[] = [];
+    const deduplicate = config.deduplicateEvents ?? false;
+    const showEmojis = config.showEmojis ?? false;
+    let allEvents: RawEvent[] = [];
 
-      await Promise.allSettled(
-        enabledCals.map(async (cal) => {
-          try {
-            const res = await fetch(cal.url, {
-              headers: { "User-Agent": "CalSync/2.0" },
-              cache: "no-store",
-            });
-            if (!res.ok) return;
-            const text = await res.text();
-            allEvents.push(...parseCalendarToRaw(text, cal, overrides));
-          } catch {
-            // skip failing calendars silently
-          }
-        })
-      );
+    await Promise.allSettled(
+      enabledCals.map(async (cal) => {
+        try {
+          const res = await fetch(cal.url, {
+            headers: { "User-Agent": "CalSync/2.0" },
+            cache: "no-store",
+          });
+          if (!res.ok) return;
+          const text = await res.text();
+          allEvents.push(...parseCalendarToRaw(text, cal, overrides));
+        } catch {
+          // skip failing calendars silently
+        }
+      })
+    );
 
-      allEvents.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
-      return NextResponse.json({ calendarName: "Todos los calendarios", events: allEvents });
+    allEvents.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+    if (deduplicate) allEvents = deduplicatePreviewEvents(allEvents, showEmojis);
+    return NextResponse.json({ calendarName: "Todos los calendarios", events: allEvents });
     }
 
     // ── Single calendar mode ────────────────────────────────────────────────

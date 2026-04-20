@@ -103,6 +103,7 @@ const DEFAULT_CONFIG_FIELDS = {
   alert2Minutes: 5,
   showEmojis: false,
   showCalendarName: true,
+  deduplicateEvents: false,
   eventOverrides: {} as Record<string, EventOverride>,
   updatedAt: Date.now(),
 };
@@ -266,6 +267,7 @@ export default function Dashboard() {
   const cfg = config!;
   const showEmojis = cfg.showEmojis ?? false;
   const showCalName = cfg.showCalendarName ?? true;
+  const deduplicateEvents = cfg.deduplicateEvents ?? false;
   const sampleCal = cfg.calendars[0];
   const sampleEvent = "Gran Premio de Melbourne";
   const previewTitle = formatEventTitle(
@@ -348,7 +350,7 @@ export default function Dashboard() {
 
   // ─── Format settings ──────────────────────────────────────────────────────
 
-  const handleToggleFormat = async (field: "showEmojis" | "showCalendarName") => {
+  const handleToggleFormat = async (field: "showEmojis" | "showCalendarName" | "deduplicateEvents") => {
     if (!config) return;
     const updated = { ...config, [field]: !config[field] };
     setConfig(updated);
@@ -756,7 +758,7 @@ export default function Dashboard() {
                 </div>
               </div>
             </li>
-            <li className={`${styles.calItem} ${styles.calItemNoBorder}`}>
+            <li className={styles.calItem}>
               <div className={styles.calItemLeft}>
                 <button
                   className={`${styles.toggleBtn} ${showCalName ? styles.toggleOn : styles.toggleOff}`}
@@ -768,6 +770,24 @@ export default function Dashboard() {
                 <div className={styles.calInfo}>
                   <span className={styles.calName}>Mostrar nombre del calendario</span>
                   <span className={styles.calUrlFull}>Prefija cada evento con el nombre del calendario</span>
+                </div>
+              </div>
+            </li>
+            <li className={`${styles.calItem} ${styles.calItemNoBorder}`}>
+              <div className={styles.calItemLeft}>
+                <button
+                  className={`${styles.toggleBtn} ${deduplicateEvents ? styles.toggleOn : styles.toggleOff}`}
+                  onClick={() => handleToggleFormat("deduplicateEvents")}
+                  aria-label="Eliminar eventos repetidos"
+                >
+                  <span className={styles.toggleThumb} />
+                </button>
+                <div className={styles.calInfo}>
+                  <span className={styles.calName}>Eliminar eventos repetidos</span>
+                  <span className={styles.calUrlFull}>
+                    Si dos calendarios tienen el mismo evento, se fusionan en uno solo:
+                    ARSENAL y CHELSEA: FA Cup
+                  </span>
                 </div>
               </div>
             </li>

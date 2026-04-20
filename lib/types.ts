@@ -23,8 +23,9 @@ export interface UserConfig {
   calendars: CalendarSource[];
   alert1Minutes: number;
   alert2Minutes: number;
-  showEmojis: boolean;       // Keep original emojis in titles
-  showCalendarName: boolean; // Prepend CALENDAR: before event title
+  showEmojis: boolean;          // Keep original emojis in titles
+  showCalendarName: boolean;    // Prepend CALENDAR: before event title
+  deduplicateEvents?: boolean;  // Merge duplicate events across calendars
   /** Per-event field overrides keyed by ICS event UID */
   eventOverrides?: Record<string, EventOverride>;
   createdAt: number;
