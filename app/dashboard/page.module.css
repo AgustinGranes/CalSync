@@ -1,0 +1,613 @@
+/* ─── Layout ─────────────────────────────────────────────────────────────── */
+.main {
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  padding: 16px 16px 48px;
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ─── Loading ────────────────────────────────────────────────────────────── */
+.loadingCenter {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100dvh;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(124, 58, 237, 0.2);
+  border-top-color: #7C3AED;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Background Blobs ───────────────────────────────────────────────────── */
+.blobPurple,
+.blobBlue,
+.blobTeal {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.25;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.blobPurple {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, #7c3aed, transparent 70%);
+  top: -150px; left: -150px;
+  animation: floatBlob 14s ease-in-out infinite;
+}
+
+.blobBlue {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, #2563eb, transparent 70%);
+  top: 30%; right: -100px;
+  animation: floatBlob 14s ease-in-out infinite;
+  animation-delay: -5s;
+}
+
+.blobTeal {
+  width: 350px; height: 350px;
+  background: radial-gradient(circle, #0d9488, transparent 70%);
+  bottom: 0; left: 50%;
+  animation: floatBlob 14s ease-in-out infinite;
+  animation-delay: -10s;
+}
+
+@keyframes floatBlob {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%       { transform: translateY(-20px) scale(1.04); }
+}
+
+/* ─── Top Bar ────────────────────────────────────────────────────────────── */
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0 4px;
+  animation: fadeIn 0.4s ease both;
+}
+
+.logoWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logoIcon {
+  width: 32px;
+  height: 32px;
+  filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.5));
+}
+
+.logoText {
+  font-size: 1.3rem;
+  font-weight: 700;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.userSection {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  object-fit: cover;
+}
+
+.btnLogout {
+  padding: 6px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-family: var(--font-inter);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnLogout:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+/* ─── Cards ──────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 22px 24px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn 0.5s var(--ease-out) both;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04) inset,
+    0 4px 30px rgba(0,0,0,0.25);
+  transition: border-color 0.3s ease;
+}
+
+.card:hover {
+  border-color: var(--border-strong);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cardIconWrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 3px 12px rgba(124, 58, 237, 0.35);
+}
+
+.cardTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cardDesc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.cardNote {
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  line-height: 1.5;
+}
+
+/* ─── URL Box ────────────────────────────────────────────────────────────── */
+.urlBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  color: var(--text-tertiary);
+}
+
+.urlText {
+  font-size: 0.78rem;
+  font-family: 'Courier New', monospace;
+  color: var(--text-secondary);
+  word-break: break-all;
+  flex: 1;
+}
+
+/* ─── Buttons ────────────────────────────────────────────────────────────── */
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btnPrimary, .btnSecondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 11px 20px;
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+  border: none;
+  font-family: var(--font-inter);
+  flex: 1;
+  white-space: nowrap;
+}
+
+.btnPrimary {
+  background: var(--gradient-primary);
+  color: white;
+  box-shadow: 0 3px 16px rgba(124, 58, 237, 0.38);
+}
+
+.btnPrimary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(124, 58, 237, 0.5);
+}
+
+.btnPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnSecondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+  backdrop-filter: blur(8px);
+}
+
+.btnSecondary:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--purple-light);
+  transform: translateY(-2px);
+}
+
+.btnSuccess {
+  border-color: var(--teal) !important;
+  color: #2dd4bf !important;
+}
+
+/* ─── Calendar List ──────────────────────────────────────────────────────── */
+.calList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.calItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  gap: 10px;
+  transition: border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.calItem:hover {
+  border-color: var(--border-strong);
+}
+
+.calItemDisabled {
+  opacity: 0.5;
+}
+
+.calItemLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.calInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.calName {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.calUrl {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  font-family: 'Courier New', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+.calActions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* ─── Toggle Switch ──────────────────────────────────────────────────────── */
+.toggleBtn {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.25s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.toggleOn  { background: linear-gradient(135deg, #7C3AED, #2563EB); }
+.toggleOff { background: rgba(255,255,255,0.1); border: 1px solid var(--border); }
+
+.toggleThumb {
+  position: absolute;
+  top: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  transition: left 0.25s ease;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+.toggleOn  .toggleThumb { left: 18px; }
+.toggleOff .toggleThumb { left: 2px; }
+
+/* ─── Icon Buttons ───────────────────────────────────────────────────────── */
+.iconBtn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.iconBtn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.iconBtnDanger:hover {
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* ─── Add Calendar Button ────────────────────────────────────────────────── */
+.btnAddCal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px;
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-weight: 500;
+  font-family: var(--font-inter);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.btnAddCal:hover {
+  border-color: var(--purple-light);
+  color: var(--purple-light);
+  background: rgba(124, 58, 237, 0.06);
+}
+
+/* ─── Add Calendar Form ──────────────────────────────────────────────────── */
+.addForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  animation: fadeIn 0.2s ease both;
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.3px;
+}
+
+.input {
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-family: var(--font-inter);
+  outline: none;
+  transition: border-color 0.2s ease;
+  width: 100%;
+}
+
+.input:focus {
+  border-color: var(--purple-light);
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.18);
+}
+
+.input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.error {
+  font-size: 0.8rem;
+  color: #f87171;
+  margin: 0;
+}
+
+.formActions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ─── Alert Settings ─────────────────────────────────────────────────────── */
+.alertRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.alertLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.alertBadge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: var(--gradient-primary);
+  color: white;
+  border-radius: 5px;
+  padding: 2px 6px;
+  letter-spacing: 0.2px;
+}
+
+.select {
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-family: var(--font-inter);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s ease;
+  min-width: 160px;
+}
+
+.select:focus {
+  border-color: var(--purple-light);
+}
+
+.select option {
+  background: #1a1a2e;
+  color: var(--text-primary);
+}
+
+.saveStatus {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  margin: 0;
+  transition: color 0.3s ease;
+}
+
+.saveOk {
+  color: #2dd4bf;
+}
+
+/* ─── Footer ─────────────────────────────────────────────────────────────── */
+.footer {
+  text-align: center;
+  padding: 8px 0;
+}
+
+.footer p {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+/* ─── Edit Modal ─────────────────────────────────────────────────────────── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+  animation: fadeIn 0.2s ease both;
+}
+
+.modal {
+  background: #13132a;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  animation: slideUp 0.25s var(--ease-out) both;
+}
+
+.modalTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ─── Animations ─────────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .main { padding: 12px 12px 40px; }
+  .card { padding: 18px 16px; }
+  .actions { flex-direction: column; }
+  .alertRow { flex-direction: column; align-items: flex-start; }
+  .select { width: 100%; }
+}

@@ -3,8 +3,5 @@
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
-  "regions": ["gru1"],
-  "env": {
-    "CALENDAR_SOURCES": "@calendar_sources"
-  }
+  "regions": ["gru1"]
 }

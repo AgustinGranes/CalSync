@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { AuthProvider } from "@/lib/auth-context";
 import "./globals.css";
 
 const inter = Inter({
@@ -23,7 +24,8 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "CalSync — Tu Calendario Unificado",
-    description: "Unifica todos tus calendarios en uno solo. Suscripción WebCal automática.",
+    description:
+      "Unifica todos tus calendarios en uno solo. Suscripción WebCal automática.",
     type: "website",
   },
 };
@@ -46,7 +48,9 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body>{children}</body>
+      <body>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

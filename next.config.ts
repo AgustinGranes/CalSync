@@ -1,13 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Allow fetching from external iCal sources during SSR
-  experimental: {},
-  // Headers for the calendar API
+  // firebase-admin uses native Node.js modules — must be external
+  serverExternalPackages: ["firebase-admin"],
+
   async headers() {
     return [
       {
-        source: "/api/calendar",
+        source: "/api/calendar/:uid",
         headers: [
           { key: "Access-Control-Allow-Origin", value: "*" },
           { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },

@@ -12,10 +12,34 @@
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 600px;
+  max-width: 580px;
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+/* ─── Loading ────────────────────────────────────────────────────────────── */
+.loadingCenter {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100dvh;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(124, 58, 237, 0.2);
+  border-top-color: #7C3AED;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* ─── Animated Background Blobs ─────────────────────────────────────────── */
@@ -28,7 +52,6 @@
   opacity: 0.35;
   pointer-events: none;
   z-index: 0;
-  animation: floatBlob 12s ease-in-out infinite;
 }
 
 .blobPurple {
@@ -37,7 +60,7 @@
   background: radial-gradient(circle, #7c3aed, transparent 70%);
   top: -200px;
   left: -200px;
-  animation-delay: 0s;
+  animation: floatBlob 12s ease-in-out infinite;
 }
 
 .blobBlue {
@@ -46,6 +69,7 @@
   background: radial-gradient(circle, #2563eb, transparent 70%);
   top: 200px;
   right: -150px;
+  animation: floatBlob 12s ease-in-out infinite;
   animation-delay: -4s;
 }
 
@@ -56,6 +80,7 @@
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
+  animation: floatBlob 12s ease-in-out infinite;
   animation-delay: -8s;
 }
 
@@ -103,12 +128,6 @@
   letter-spacing: -0.5px;
 }
 
-.tagline {
-  font-size: 0.85rem;
-  color: var(--text-tertiary);
-  letter-spacing: 0.4px;
-}
-
 /* ─── Hero ───────────────────────────────────────────────────────────────── */
 .hero {
   text-align: center;
@@ -135,7 +154,7 @@
   font-size: 0.95rem;
   color: var(--text-secondary);
   line-height: 1.65;
-  max-width: 480px;
+  max-width: 460px;
   margin: 0 auto;
 }
 
@@ -173,228 +192,67 @@
   font-size: 0.9rem;
 }
 
-/* ─── Main Card ──────────────────────────────────────────────────────────── */
-.card {
+/* ─── Login Card ─────────────────────────────────────────────────────────── */
+.loginCard {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  padding: 28px;
+  padding: 32px 28px;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  align-items: center;
+  gap: 16px;
   animation: fadeUp 0.6s 0.3s var(--ease-out) both;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
   box-shadow:
     0 0 0 1px rgba(255,255,255,0.04) inset,
     0 4px 40px rgba(0,0,0,0.3);
-}
-
-.card:hover {
-  border-color: var(--border-strong);
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,0.06) inset,
-    0 4px 60px rgba(124, 58, 237, 0.15);
-}
-
-.cardHeader {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.cardIcon {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-md);
-  background: var(--gradient-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  flex-shrink: 0;
-  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.4);
-}
-
-.cardTitle {
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.cardDesc {
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-  margin-top: 2px;
-}
-
-/* ─── URL Box ────────────────────────────────────────────────────────────── */
-.urlBox {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 12px 16px;
-  color: var(--text-tertiary);
-}
-
-.urlText {
-  font-size: 0.8rem;
-  font-family: 'Courier New', monospace;
-  color: var(--text-secondary);
-  word-break: break-all;
-  flex: 1;
-}
-
-/* ─── Action Buttons ─────────────────────────────────────────────────────── */
-.actions {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.btnPrimary,
-.btnSecondary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 13px 22px;
-  border-radius: var(--radius-md);
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s var(--ease-out);
-  border: none;
-  font-family: var(--font-inter);
-  white-space: nowrap;
-}
-
-.btnPrimary {
-  background: var(--gradient-primary);
-  color: white;
-  flex: 1;
-  justify-content: center;
-  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4);
-}
-
-.btnPrimary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(124, 58, 237, 0.55);
-}
-
-.btnPrimary:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.btnPrimary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btnSecondary {
-  background: var(--bg-card);
-  color: var(--text-primary);
-  border: 1px solid var(--border-strong);
-  flex: 1;
-  justify-content: center;
-  backdrop-filter: blur(12px);
-}
-
-.btnSecondary:hover {
-  background: var(--bg-card-hover);
-  border-color: var(--purple-light);
-  transform: translateY(-2px);
-}
-
-.btnSecondary:active {
-  transform: translateY(0);
-}
-
-.btnSecondary.copied {
-  border-color: var(--teal);
-  color: #2dd4bf;
-}
-
-.subscribedNote {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
   text-align: center;
+}
+
+.loginTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.loginSub {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0;
   line-height: 1.5;
 }
 
-/* ─── Instructions Card ──────────────────────────────────────────────────── */
-.instructionsCard {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  padding: 24px 28px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  animation: fadeUp 0.6s 0.4s var(--ease-out) both;
-  box-shadow: 0 4px 40px rgba(0,0,0,0.25);
-}
-
-.instructionsTitle {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 16px;
-}
-
-.steps {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  list-style: none;
-  padding: 0;
-}
-
-.step {
+.btnGoogle {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-.stepNumber {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--gradient-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: white;
-  flex-shrink: 0;
-}
-
-.stepText {
-  font-size: 0.88rem;
-  color: var(--text-secondary);
-}
-
-.googleCalTip {
-  margin-top: 16px;
-  padding: 12px 14px;
-  background: rgba(37, 99, 235, 0.12);
-  border: 1px solid rgba(37, 99, 235, 0.25);
+  gap: 10px;
+  padding: 13px 24px;
+  background: white;
+  color: #1a1a2e;
+  border: none;
   border-radius: var(--radius-md);
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-  line-height: 1.55;
+  font-size: 0.92rem;
+  font-weight: 600;
+  font-family: var(--font-inter);
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  width: 100%;
+  max-width: 300px;
+  justify-content: center;
 }
 
-.link {
-  color: var(--blue-light);
-  text-decoration: none;
+.btnGoogle:hover {
+  background: #f5f5f5;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.35);
 }
 
-.link:hover {
-  text-decoration: underline;
+.btnGoogle:active {
+  transform: translateY(0);
 }
 
 /* ─── Format Card ────────────────────────────────────────────────────────── */
@@ -405,7 +263,7 @@
   padding: 24px 28px;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  animation: fadeUp 0.6s 0.5s var(--ease-out) both;
+  animation: fadeUp 0.6s 0.4s var(--ease-out) both;
   box-shadow: 0 4px 40px rgba(0,0,0,0.25);
 }
 
@@ -426,18 +284,14 @@
 .formatExamples {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .formatExample {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   padding: 10px 14px;
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.3);
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
-  font-size: 0.85rem;
   transition: border-color 0.2s ease;
 }
 
@@ -445,34 +299,31 @@
   border-color: var(--border-strong);
 }
 
-.formatBadge {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: var(--purple-light);
-  background: rgba(124, 58, 237, 0.15);
-  border: 1px solid rgba(124, 58, 237, 0.3);
-  border-radius: 6px;
-  padding: 2px 8px;
-  white-space: nowrap;
+.formatCode {
   font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  letter-spacing: 0.01em;
 }
 
-.formatSep {
+.formatCalName {
+  color: #a78bfa;
+  font-weight: 700;
+}
+
+.formatColon {
   color: var(--text-tertiary);
   font-weight: 500;
 }
 
-.formatEvent {
+.formatEventTitle {
   color: var(--text-primary);
-  font-weight: 400;
 }
 
 /* ─── Footer ─────────────────────────────────────────────────────────────── */
 .footer {
   text-align: center;
   padding: 16px 0 8px;
-  animation: fadeUp 0.6s 0.6s var(--ease-out) both;
+  animation: fadeUp 0.6s 0.5s var(--ease-out) both;
 }
 
 .footer p {
@@ -495,7 +346,5 @@
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
   .main { padding: 16px 12px 40px; }
-  .card, .instructionsCard, .formatCard { padding: 20px 18px; }
-  .actions { flex-direction: column; }
-  .btnPrimary, .btnSecondary { width: 100%; }
+  .loginCard, .formatCard { padding: 20px 18px; }
 }
