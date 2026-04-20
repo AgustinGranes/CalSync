@@ -122,7 +122,12 @@ function buildVEvent(event: ParsedEvent, alert1: number, alert2: number): string
   return lines.join("\r\n");
 }
 
-function parseICS(icsText: string, calendarName: string): ParsedEvent[] {
+function parseICS(
+  icsText: string,
+  calendarName: string,
+  showEmojis: boolean,
+  showCalendarName: boolean
+): ParsedEvent[] {
   const events: ParsedEvent[] = [];
   try {
     const parsed = ICAL.parse(icsText);
@@ -154,16 +159,23 @@ function parseICS(icsText: string, calendarName: string): ParsedEvent[] {
             .trim();
         }
 
-        // "CALENDAR NAME: Event Title" format, no emojis
-        const cleanCalName = stripEmojis(calendarName).toUpperCase().trim();
-        const cleanSummary = stripEmojis(event.summary || "Sin título");
-        const newSummary = `${cleanCalName}: ${cleanSummary}`;
+        // Format summary based on user settings
+        const rawSummary = event.summary || "Sin t\u00edtulo";
+        const cleanSummary = showEmojis ? rawSummary : stripEmojis(rawSummary);
+
+        let newSummary: string;
+        if (showCalendarName) {
+          const cleanCalName = (showEmojis ? calendarName : stripEmojis(calendarName)).toUpperCase().trim();
+          newSummary = `${cleanCalName}: ${cleanSummary}`;
+        } else {
+          newSummary = cleanSummary;
+        }
 
         events.push({
           uid: event.uid || `calsync-${Math.random().toString(36).slice(2)}`,
           summary: newSummary,
-          description: stripEmojis(event.description || ""),
-          location: stripEmojis(event.location || ""),
+          description: showEmojis ? (event.description || "") : stripEmojis(event.description || ""),
+          location: showEmojis ? (event.location || "") : stripEmojis(event.location || ""),
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           url: (event as any).url || "",
           start: startDate.toISOString(),
@@ -247,6 +259,8 @@ export async function GET(
   );
 
   // Parse and merge events
+  const showEmojis = userConfig.showEmojis ?? false;
+  const showCalName = userConfig.showCalendarName ?? true;
   const allEvents: ParsedEvent[] = [];
   for (const result of fetchResults) {
     if (result.status === "rejected") {
@@ -254,7 +268,7 @@ export async function GET(
       continue;
     }
     const { cal, text } = result.value;
-    allEvents.push(...parseICS(text, cal.name));
+    allEvents.push(...parseICS(text, cal.name, showEmojis, showCalName));
   }
 
   const alert1 = userConfig.alert1Minutes ?? 15;

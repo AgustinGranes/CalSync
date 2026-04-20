@@ -1,10 +1,10 @@
 // ─── Shared TypeScript Types ──────────────────────────────────────────────────
 
 export interface CalendarSource {
-  id: string;          // UUID generado en el cliente
-  name: string;        // Nombre legible del calendario
-  url: string;         // URL del .ics
-  enabled: boolean;    // Si está activo o no
+  id: string;
+  name: string;
+  url: string;
+  enabled: boolean;
 }
 
 export interface UserConfig {
@@ -13,10 +13,12 @@ export interface UserConfig {
   displayName: string | null;
   photoURL: string | null;
   calendars: CalendarSource[];
-  alert1Minutes: number;  // 0 = desactivado
-  alert2Minutes: number;  // 0 = desactivado
-  createdAt: number;      // timestamp ms
-  updatedAt: number;      // timestamp ms
+  alert1Minutes: number;
+  alert2Minutes: number;
+  showEmojis: boolean;       // Keep original emojis in titles
+  showCalendarName: boolean; // Prepend CALENDAR: before event title
+  createdAt: number;
+  updatedAt: number;
 }
 
 export type AlertOption = {
@@ -26,7 +28,6 @@ export type AlertOption = {
 
 export const ALERT_OPTIONS: AlertOption[] = [
   { label: "Desactivado", value: 0 },
-  { label: "Al momento", value: 0.01 }, // special case
   { label: "5 minutos antes", value: 5 },
   { label: "10 minutos antes", value: 10 },
   { label: "15 minutos antes", value: 15 },
