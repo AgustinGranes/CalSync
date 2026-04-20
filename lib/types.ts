@@ -29,6 +29,7 @@ export interface UserConfig {
   showEmojis: boolean;          // Keep original emojis in titles
   showCalendarName: boolean;    // Prepend CALENDAR: before event title
   deduplicateEvents?: boolean;  // Merge duplicate events across calendars
+  hidePastEvents?: boolean;     // Automatically filter out events whose end date has passed
   /** Per-event field overrides keyed by ICS event UID */
   eventOverrides?: Record<string, EventOverride>;
   createdAt: number;

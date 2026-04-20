@@ -123,7 +123,8 @@ function parseICS(
   calendarName: string,
   showEmojis: boolean,
   showCalendarName: boolean,
-  eventOverrides: Record<string, EventOverride>
+  eventOverrides: Record<string, EventOverride>,
+  hidePastEvents: boolean
 ): ParsedEvent[] {
   const events: ParsedEvent[] = [];
   try {
@@ -177,6 +178,15 @@ function parseICS(
           newSummary = cleanSummary;
         }
 
+        const finalEnd = ov.end !== undefined ? ov.end : (endDate ? endDate.toISOString() : startIso);
+
+        if (hidePastEvents) {
+          const endObj = new Date(finalEnd);
+          if (!isNaN(endObj.getTime()) && endObj.getTime() < Date.now()) {
+            continue;
+          }
+        }
+
         const location = ov.location !== undefined ? ov.location : (event.location || "");
         const description = ov.description !== undefined ? ov.description : (event.description || "");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -191,7 +201,7 @@ function parseICS(
           location: showEmojis ? location : stripEmojis(location),
           url,
           start: ov.start !== undefined ? ov.start : startIso,
-          end: ov.end !== undefined ? ov.end : endDate.toISOString(),
+          end: finalEnd,
           allDay,
           rrule: rruleStr,
         });
@@ -319,6 +329,7 @@ export async function GET(
   const showEmojis = userConfig.showEmojis ?? false;
   const showCalName = userConfig.showCalendarName ?? true;
   const deduplicate = userConfig.deduplicateEvents ?? false;
+  const hidePastEvents = userConfig.hidePastEvents ?? false;
   const overrides = userConfig.eventOverrides ?? {};
   let allEvents: ParsedEvent[] = [];
   for (const result of fetchResults) {
@@ -327,7 +338,7 @@ export async function GET(
       continue;
     }
     const { cal, text } = result.value;
-    allEvents.push(...parseICS(text, cal.name, showEmojis, showCalName, overrides));
+    allEvents.push(...parseICS(text, cal.name, showEmojis, showCalName, overrides, hidePastEvents));
   }
 
   // Deduplicate if option is enabled

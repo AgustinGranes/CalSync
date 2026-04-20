@@ -112,6 +112,7 @@ const DEFAULT_CONFIG_FIELDS = {
   showEmojis: false,
   showCalendarName: true,
   deduplicateEvents: false,
+  hidePastEvents: false,
   eventOverrides: {} as Record<string, EventOverride>,
   updatedAt: Date.now(),
 };
@@ -277,6 +278,7 @@ export default function Dashboard() {
   const showEmojis = cfg.showEmojis ?? false;
   const showCalName = cfg.showCalendarName ?? true;
   const deduplicateEvents = cfg.deduplicateEvents ?? false;
+  const hidePastEvents = cfg.hidePastEvents ?? false;
   const sampleEvent = "🏎️ Gran premio de Melbourne";
   const previewTitle = formatEventTitle(
     sampleEvent,
@@ -358,7 +360,7 @@ export default function Dashboard() {
 
   // ─── Format settings ──────────────────────────────────────────────────────
 
-  const handleToggleFormat = async (field: "showEmojis" | "showCalendarName" | "deduplicateEvents") => {
+  const handleToggleFormat = async (field: "showEmojis" | "showCalendarName" | "deduplicateEvents" | "hidePastEvents") => {
     if (!config) return;
     const updated = { ...config, [field]: !config[field] };
     setConfig(updated);
@@ -813,6 +815,21 @@ export default function Dashboard() {
                     Si dos calendarios tienen el mismo evento, se fusionan en uno solo:
                     ARSENAL y CHELSEA: FA Cup
                   </span>
+                </div>
+              </div>
+            </li>
+            <li className={`${styles.calItem} ${styles.calItemNoBorder}`}>
+              <div className={styles.calItemLeft}>
+                <button
+                  className={`${styles.toggleBtn} ${hidePastEvents ? styles.toggleOn : styles.toggleOff}`}
+                  onClick={() => handleToggleFormat("hidePastEvents")}
+                  aria-label="Eliminar eventos terminados"
+                >
+                  <span className={styles.toggleThumb} />
+                </button>
+                <div className={styles.calInfo}>
+                  <span className={styles.calName}>Eliminar eventos terminados</span>
+                  <span className={styles.calUrlFull}>Oculta del calendario los eventos cuya fecha de fin ya expiró</span>
                 </div>
               </div>
             </li>

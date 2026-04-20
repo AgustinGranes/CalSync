@@ -64,7 +64,8 @@ function deduplicatePreviewEvents(
 function parseCalendarToRaw(
   text: string,
   cal: CalendarSource,
-  overrides: Record<string, EventOverride>
+  overrides: Record<string, EventOverride>,
+  hidePastEvents: boolean
 ): RawEvent[] {
   const events: RawEvent[] = [];
   try {
@@ -92,11 +93,20 @@ function parseCalendarToRaw(
         const ov = overrides[uid];
         if (ov?.deleted) continue;
 
+        const finalEnd = ov?.end !== undefined ? ov.end : (endDate ? endDate.toISOString() : startIso);
+
+        if (hidePastEvents) {
+          const endObj = new Date(finalEnd);
+          if (!isNaN(endObj.getTime()) && endObj.getTime() < Date.now()) {
+            continue;
+          }
+        }
+
         events.push({
           uid,
           summary: ov?.summary !== undefined ? ov.summary : rawSummary,
           start: ov?.start !== undefined ? ov.start : startIso,
-          end: ov?.end !== undefined ? ov.end : (endDate ? endDate.toISOString() : startIso),
+          end: finalEnd,
           allDay,
           location: ov?.location !== undefined ? ov.location : (event.location || ""),
           url: ov?.url !== undefined ? ov.url : (vevent.getFirstPropertyValue("url") || ""),
@@ -131,6 +141,7 @@ export async function GET(request: Request) {
     }
     const config = snap.data() as UserConfig;
     const overrides = config.eventOverrides ?? {};
+    const hidePastEvents = config.hidePastEvents ?? false;
 
     // ── All calendars mode ──────────────────────────────────────────────────
     if (calId === "all") {
@@ -148,7 +159,7 @@ export async function GET(request: Request) {
           });
           if (!res.ok) return;
           const text = await res.text();
-          allEvents.push(...parseCalendarToRaw(text, cal, overrides));
+          allEvents.push(...parseCalendarToRaw(text, cal, overrides, hidePastEvents));
         } catch {
           // skip failing calendars silently
         }
@@ -173,7 +184,7 @@ export async function GET(request: Request) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
 
-    const events = parseCalendarToRaw(text, cal, overrides);
+    const events = parseCalendarToRaw(text, cal, overrides, hidePastEvents);
     events.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
 
     return NextResponse.json({ calendarName: cal.name, events });
