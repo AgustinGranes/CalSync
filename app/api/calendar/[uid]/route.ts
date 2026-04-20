@@ -6,6 +6,7 @@ import { UserConfig, EventOverride } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+export const runtime = "nodejs";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -278,9 +279,6 @@ function deduplicateByTitle(
 }
 
 // ─── Route ────────────────────────────────────────────────────────────────────
-
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
 
 export async function GET(
   _request: Request,
