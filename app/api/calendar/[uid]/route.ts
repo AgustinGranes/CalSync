@@ -353,13 +353,9 @@ export async function GET(
     allEvents.push(...parseICS(text, cal.name, showEmojis, showCalName, overrides, hidePastEvents, hideLocation));
   }
 
-  // Deduplicate if option is enabled
-  if (deduplicate) {
-    allEvents = deduplicateByTitle(allEvents, showCalName, showEmojis);
-  }
+  // Always deduplicate to ensure "no repeats"
+  allEvents = deduplicateByTitle(allEvents, showCalName, showEmojis);
 
-  const alert1 = userConfig.alert1Minutes ?? 15;
-  const alert2 = userConfig.alert2Minutes ?? 5;
   const now = toIcalDate(new Date().toISOString(), false);
 
   const icsLines = [

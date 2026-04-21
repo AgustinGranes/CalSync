@@ -726,37 +726,6 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* ── Alerts Card ───────────────────────────────────────────────────── */}
-        <section className={styles.card} aria-label="Configuración de alertas">
-          <div className={styles.cardHeader}>
-            <div className={styles.cardIconWrap}>
-              <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
-                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <div>
-              <h2 className={styles.cardTitle}>Alertas de eventos</h2>
-              <p className={styles.cardDesc}>Se agregan a todos tus eventos automáticamente</p>
-            </div>
-          </div>
-          <div className={styles.alertRow}>
-            <label className={styles.alertLabel} htmlFor="alert1">
-              <span className={styles.alertBadge}>1ª</span>Primera alerta
-            </label>
-            <select id="alert1" className={styles.select} value={cfg.alert1Minutes} onChange={(e) => handleAlertChange("alert1Minutes", Number(e.target.value))}>
-              {ALERT_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-            </select>
-          </div>
-          <div className={styles.alertRow}>
-            <label className={styles.alertLabel} htmlFor="alert2">
-              <span className={styles.alertBadge}>2ª</span>Segunda alerta
-            </label>
-            <select id="alert2" className={styles.select} value={cfg.alert2Minutes} onChange={(e) => handleAlertChange("alert2Minutes", Number(e.target.value))}>
-              {ALERT_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-            </select>
-          </div>
-        </section>
-
         {/* ── Format Settings Card ──────────────────────────────────────────── */}
         <section className={styles.card} aria-label="Ajustes de Eventos">
           <div className={styles.cardHeader}>
@@ -803,7 +772,7 @@ export default function Dashboard() {
                 </div>
               </div>
             </li>
-            <li className={`${styles.calItem} ${styles.calItemNoBorder}`}>
+            <li className={styles.calItem}>
               <div className={styles.calItemLeft}>
                 <button
                   className={`${styles.toggleBtn} ${deduplicateEvents ? styles.toggleOn : styles.toggleOff}`}
@@ -815,8 +784,7 @@ export default function Dashboard() {
                 <div className={styles.calInfo}>
                   <span className={styles.calName}>Eliminar eventos repetidos</span>
                   <span className={styles.calUrlFull}>
-                    Si dos calendarios tienen el mismo evento, se fusionan en uno solo:
-                    ARSENAL y CHELSEA: FA Cup
+                    Si dos calendarios tienen el mismo evento, se fusionan en uno solo.
                   </span>
                 </div>
               </div>

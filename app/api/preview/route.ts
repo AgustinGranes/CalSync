@@ -169,7 +169,8 @@ export async function GET(request: Request) {
     );
 
     allEvents.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
-    if (deduplicate) allEvents = deduplicatePreviewEvents(allEvents, showEmojis);
+    // Always deduplicate in preview to prevent repeats
+    allEvents = deduplicatePreviewEvents(allEvents, showEmojis);
     return NextResponse.json({ calendarName: "Todos los calendarios", events: allEvents });
     }
 
@@ -189,7 +190,10 @@ export async function GET(request: Request) {
     const events = parseCalendarToRaw(text, cal, overrides, hidePastEvents, hideLocation);
     events.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
 
-    return NextResponse.json({ calendarName: cal.name, events });
+    // Deduplicate within the same calendar as well
+    const dedupedEvents = deduplicatePreviewEvents(events, showEmojis);
+
+    return NextResponse.json({ calendarName: cal.name, events: dedupedEvents });
   } catch (err) {
     console.error("[Preview] Error:", err);
     return NextResponse.json({ error: "Failed to fetch calendar" }, { status: 500 });
