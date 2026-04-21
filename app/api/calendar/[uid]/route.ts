@@ -119,7 +119,7 @@ function buildVEvent(event: ParsedEvent, alert1: number, alert2: number): string
     const trigger = formatTrigger(minutes);
     lines.push("BEGIN:VALARM");
     lines.push(`TRIGGER:${trigger}`);
-    lines.push("ACTION:AUDIO");
+    lines.push("ACTION:DISPLAY");
     lines.push(`DESCRIPTION:${label}`);
     lines.push("END:VALARM");
   };
