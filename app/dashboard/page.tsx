@@ -293,7 +293,13 @@ export default function Dashboard() {
 
   // ─── Calendar link actions ────────────────────────────────────────────────
 
-  const handleSubscribe = () => { if (webcalUrl) window.open(webcalUrl, "_blank"); };
+  const handleSubscribe = () => {
+    if (!webcalUrl) return;
+    // Use a hidden anchor to trigger the webcal:// protocol — more reliable than window.open on iOS
+    const a = document.createElement("a");
+    a.href = webcalUrl;
+    a.click();
+  };
   const handleCopy = async () => {
     if (!httpsUrl) return;
     await navigator.clipboard.writeText(httpsUrl);
