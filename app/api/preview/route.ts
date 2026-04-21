@@ -65,7 +65,8 @@ function parseCalendarToRaw(
   text: string,
   cal: CalendarSource,
   overrides: Record<string, EventOverride>,
-  hidePastEvents: boolean
+  hidePastEvents: boolean,
+  hideLocation: boolean
 ): RawEvent[] {
   const events: RawEvent[] = [];
   try {
@@ -108,7 +109,7 @@ function parseCalendarToRaw(
           start: ov?.start !== undefined ? ov.start : startIso,
           end: finalEnd,
           allDay,
-          location: ov?.location !== undefined ? ov.location : (event.location || ""),
+          location: hideLocation ? "" : (ov?.location !== undefined ? ov.location : (event.location || "")),
           url: ov?.url !== undefined ? ov.url : (vevent.getFirstPropertyValue("url") || ""),
           description: ov?.description !== undefined ? ov.description : (event.description || ""),
           calendarId: cal.id,
@@ -142,6 +143,7 @@ export async function GET(request: Request) {
     const config = snap.data() as UserConfig;
     const overrides = config.eventOverrides ?? {};
     const hidePastEvents = config.hidePastEvents ?? false;
+    const hideLocation = config.hideLocation ?? false;
 
     // ── All calendars mode ──────────────────────────────────────────────────
     if (calId === "all") {
@@ -159,7 +161,7 @@ export async function GET(request: Request) {
           });
           if (!res.ok) return;
           const text = await res.text();
-          allEvents.push(...parseCalendarToRaw(text, cal, overrides, hidePastEvents));
+          allEvents.push(...parseCalendarToRaw(text, cal, overrides, hidePastEvents, hideLocation));
         } catch {
           // skip failing calendars silently
         }
@@ -184,7 +186,7 @@ export async function GET(request: Request) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
 
-    const events = parseCalendarToRaw(text, cal, overrides, hidePastEvents);
+    const events = parseCalendarToRaw(text, cal, overrides, hidePastEvents, hideLocation);
     events.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
 
     return NextResponse.json({ calendarName: cal.name, events });

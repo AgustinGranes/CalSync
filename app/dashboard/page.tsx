@@ -113,6 +113,9 @@ const DEFAULT_CONFIG_FIELDS = {
   showCalendarName: true,
   deduplicateEvents: false,
   hidePastEvents: false,
+  hideLocation: false,
+  emailNotifications: false,
+  notificationEmail: "",
   eventOverrides: {} as Record<string, EventOverride>,
   updatedAt: Date.now(),
 };
@@ -279,6 +282,8 @@ export default function Dashboard() {
   const showCalName = cfg.showCalendarName ?? true;
   const deduplicateEvents = cfg.deduplicateEvents ?? false;
   const hidePastEvents = cfg.hidePastEvents ?? false;
+  const hideLocation = cfg.hideLocation ?? false;
+  const emailNotifications = cfg.emailNotifications ?? false;
   const sampleEvent = "🏎️ Gran premio de Melbourne";
   const previewTitle = formatEventTitle(
     sampleEvent,
@@ -360,7 +365,7 @@ export default function Dashboard() {
 
   // ─── Format settings ──────────────────────────────────────────────────────
 
-  const handleToggleFormat = async (field: "showEmojis" | "showCalendarName" | "deduplicateEvents" | "hidePastEvents") => {
+  const handleToggleFormat = async (field: "showEmojis" | "showCalendarName" | "deduplicateEvents" | "hidePastEvents" | "hideLocation" | "emailNotifications") => {
     if (!config) return;
     const updated = { ...config, [field]: !config[field] };
     setConfig(updated);
@@ -819,6 +824,21 @@ export default function Dashboard() {
                 </div>
               </div>
             </li>
+            <li className={styles.calItem}>
+              <div className={styles.calItemLeft}>
+                <button
+                  className={`${styles.toggleBtn} ${hideLocation ? styles.toggleOn : styles.toggleOff}`}
+                  onClick={() => handleToggleFormat("hideLocation")}
+                  aria-label="Eliminar ubicación"
+                >
+                  <span className={styles.toggleThumb} />
+                </button>
+                <div className={styles.calInfo}>
+                  <span className={styles.calName}>Eliminar ubicación de eventos</span>
+                  <span className={styles.calUrlFull}>Quita la ubicación de todos los eventos del calendario</span>
+                </div>
+              </div>
+            </li>
             <li className={`${styles.calItem} ${styles.calItemNoBorder}`}>
               <div className={styles.calItemLeft}>
                 <button
@@ -840,6 +860,63 @@ export default function Dashboard() {
             <span className={styles.formatPreviewLabel}>Vista previa</span>
             <code className={styles.formatPreviewCode}>{previewTitle}</code>
           </div>
+        </section>
+
+        {/* ── Notificaciones Card ──────────────────────────────────────────── */}
+        <section className={styles.card} aria-label="Notificaciones">
+          <div className={styles.cardHeader}>
+            <div className={styles.cardIconWrap}>
+              <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+                <path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M13.73 21a2 2 0 01-3.46 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <div>
+              <h2 className={styles.cardTitle}>Notificaciones</h2>
+              <p className={styles.cardDesc}>Recíbi alertas por email antes de cada evento</p>
+            </div>
+          </div>
+          <ul className={styles.calList}>
+            <li className={emailNotifications ? styles.calItem : `${styles.calItem} ${styles.calItemNoBorder}`}>
+              <div className={styles.calItemLeft}>
+                <button
+                  className={`${styles.toggleBtn} ${emailNotifications ? styles.toggleOn : styles.toggleOff}`}
+                  onClick={() => handleToggleFormat("emailNotifications")}
+                  aria-label="Notificaciones por email"
+                >
+                  <span className={styles.toggleThumb} />
+                </button>
+                <div className={styles.calInfo}>
+                  <span className={styles.calName}>Notificaciones por email</span>
+                  <span className={styles.calUrlFull}>Enviá recordatorios a tu correo antes de cada evento (requiere configurar cron-job.org)</span>
+                </div>
+              </div>
+            </li>
+          </ul>
+          {emailNotifications && (
+            <div style={{ padding: "0 0 16px 0" }}>
+              <div className={styles.formField}>
+                <label className={styles.label} htmlFor="notif-email">Email para notificaciones</label>
+                <input
+                  id="notif-email"
+                  className={styles.input}
+                  type="email"
+                  defaultValue={cfg.notificationEmail || cfg.email || ""}
+                  onBlur={(e) => {
+                    if (!config) return;
+                    saveConfig({ ...config, notificationEmail: e.target.value }, "Email guardado");
+                  }}
+                  placeholder="tu@email.com"
+                />
+              </div>
+              <div style={{ padding: "0 16px 8px", fontSize: "12px", color: "var(--muted)" }}>
+                <p style={{ margin: "0 0 6px" }}>Para activar, configurá un cron en <a href="https://cron-job.org" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)" }}>cron-job.org</a> que llame a esta URL cada minuto:</p>
+                <code style={{ background: "rgba(255,255,255,0.07)", padding: "4px 8px", borderRadius: "6px", fontSize: "11px", wordBreak: "break-all" }}>
+                  {httpsUrl.replace("/api/calendar/", "/api/notify?uid=")}&amp;secret=TU_CRON_SECRET
+                </code>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* ── Share / Receive Card ──────────────────────────────────────────── */}

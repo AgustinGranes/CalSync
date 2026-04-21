@@ -137,7 +137,8 @@ function parseICS(
   showEmojis: boolean,
   showCalendarName: boolean,
   eventOverrides: Record<string, EventOverride>,
-  hidePastEvents: boolean
+  hidePastEvents: boolean,
+  hideLocation: boolean
 ): ParsedEvent[] {
   const events: ParsedEvent[] = [];
   try {
@@ -200,7 +201,7 @@ function parseICS(
           }
         }
 
-        const location = ov.location !== undefined ? ov.location : (event.location || "");
+        const location = hideLocation ? "" : (ov.location !== undefined ? ov.location : (event.location || ""));
         const description = ov.description !== undefined ? ov.description : (event.description || "");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const url = ov.url !== undefined ? ov.url : ((event as any).url || vevent.getFirstPropertyValue("url") || "");
@@ -340,6 +341,7 @@ export async function GET(
   const showCalName = userConfig.showCalendarName ?? true;
   const deduplicate = userConfig.deduplicateEvents ?? false;
   const hidePastEvents = userConfig.hidePastEvents ?? false;
+  const hideLocation = userConfig.hideLocation ?? false;
   const overrides = userConfig.eventOverrides ?? {};
   let allEvents: ParsedEvent[] = [];
   for (const result of fetchResults) {
@@ -348,7 +350,7 @@ export async function GET(
       continue;
     }
     const { cal, text } = result.value;
-    allEvents.push(...parseICS(text, cal.name, showEmojis, showCalName, overrides, hidePastEvents));
+    allEvents.push(...parseICS(text, cal.name, showEmojis, showCalName, overrides, hidePastEvents, hideLocation));
   }
 
   // Deduplicate if option is enabled
