@@ -380,6 +380,9 @@ export async function GET(
     "END:VTIMEZONE",
   ];
 
+  const alert1 = 15;
+  const alert2 = 5;
+
   for (const event of allEvents) {
     icsLines.push(buildVEvent(event, alert1, alert2));
   }
