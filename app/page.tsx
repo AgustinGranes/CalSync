@@ -137,7 +137,7 @@ export default function Home() {
     setAuthLoading(true);
     try {
       await sendPasswordResetEmail(auth, email);
-      setAuthMsg("Se ha enviado un enlace de recuperación a tu email.");
+      setAuthMsg("Se ha enviado un enlace de recuperación. REVISÁ TU CARPETA DE SPAM.");
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code ?? "";
       if (code === "auth/user-not-found" || code === "auth/invalid-email") {
