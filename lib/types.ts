@@ -31,8 +31,6 @@ export interface UserConfig {
   deduplicateEvents?: boolean;  // Merge duplicate events across calendars
   hidePastEvents?: boolean;     // Automatically filter out events whose end date has passed
   hideLocation?: boolean;       // Strip LOCATION from all events
-  emailNotifications?: boolean; // Send email alerts before events
-  notificationEmail?: string;   // Target email for notifications
   /** Per-event field overrides keyed by ICS event UID */
   eventOverrides?: Record<string, EventOverride>;
   createdAt: number;
