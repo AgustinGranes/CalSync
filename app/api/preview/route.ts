@@ -144,13 +144,13 @@ export async function GET(request: Request) {
     const overrides = config.eventOverrides ?? {};
     const hidePastEvents = config.hidePastEvents ?? false;
     const hideLocation = config.hideLocation ?? false;
+    const showEmojis = config.showEmojis ?? false;
 
     // ── All calendars mode ──────────────────────────────────────────────────
     if (calId === "all") {
       const enabledCals = config.calendars.filter((c) => c.enabled);
-    const deduplicate = config.deduplicateEvents ?? false;
-    const showEmojis = config.showEmojis ?? false;
-    let allEvents: RawEvent[] = [];
+      const deduplicate = config.deduplicateEvents ?? false;
+      let allEvents: RawEvent[] = [];
 
     await Promise.allSettled(
       enabledCals.map(async (cal) => {
