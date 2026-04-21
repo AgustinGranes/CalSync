@@ -293,13 +293,7 @@ export default function Dashboard() {
 
   // ─── Calendar link actions ────────────────────────────────────────────────
 
-  const handleSubscribe = () => {
-    if (!webcalUrl) return;
-    // Use a hidden anchor to trigger the webcal:// protocol — more reliable than window.open on iOS
-    const a = document.createElement("a");
-    a.href = webcalUrl;
-    a.click();
-  };
+  const handleSubscribe = () => { if (webcalUrl) window.open(webcalUrl, "_blank"); };
   const handleCopy = async () => {
     if (!httpsUrl) return;
     await navigator.clipboard.writeText(httpsUrl);
@@ -423,7 +417,7 @@ export default function Dashboard() {
     if (editEvFields.location !== undefined) newOverride.location = editEvFields.location;
     if (editEvFields.url !== undefined) newOverride.url = editEvFields.url;
     if (editEvFields.description !== undefined) newOverride.description = editEvFields.description;
-    
+
     if (editEvFields.start) newOverride.start = new Date(editEvFields.start).toISOString();
     if (editEvFields.end) newOverride.end = new Date(editEvFields.end).toISOString();
 
@@ -431,7 +425,7 @@ export default function Dashboard() {
     await saveConfig({ ...config, eventOverrides: updatedOverrides }, "Evento actualizado");
     setEditingEvent(null);
     // Refresh preview
-    await openPreview(previewCalId, previewCalName).catch(() => {});
+    await openPreview(previewCalId, previewCalName).catch(() => { });
   };
 
   const handleDeleteEventOverride = async (ev: RawEvent) => {
@@ -441,7 +435,7 @@ export default function Dashboard() {
     const updatedOverrides = { ...currentOverrides, [ev.uid]: { ...current, deleted: true } };
     await saveConfig({ ...config, eventOverrides: updatedOverrides }, "Evento eliminado");
     if (editingEvent?.uid === ev.uid) setEditingEvent(null);
-    await openPreview(previewCalId, previewCalName).catch(() => {});
+    await openPreview(previewCalId, previewCalName).catch(() => { });
   };
 
   const handleResetEventOverride = async () => {
@@ -450,7 +444,7 @@ export default function Dashboard() {
     delete updated[editingEvent.uid];
     await saveConfig({ ...config, eventOverrides: updated }, "Evento restaurado");
     setEditingEvent(null);
-    await openPreview(previewCalId, previewCalName).catch(() => {});
+    await openPreview(previewCalId, previewCalName).catch(() => { });
   };
 
   // ─── Share / Receive ──────────────────────────────────────────────────────
@@ -768,8 +762,8 @@ export default function Dashboard() {
           <div className={styles.cardHeader}>
             <div className={styles.cardIconWrap}>
               <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
-                <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
             <div>

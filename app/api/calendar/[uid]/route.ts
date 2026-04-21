@@ -399,9 +399,10 @@ export async function GET(
     status: 200,
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
+      "Content-Disposition": 'attachment; filename="mis-calendarios.ics"',
       "Cache-Control": "no-cache, no-store, must-revalidate",
       Pragma: "no-cache",
-      Expires: "0",
+      "Access-Control-Allow-Origin": "*",
     },
   });
 }
