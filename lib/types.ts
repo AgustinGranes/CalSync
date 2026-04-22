@@ -7,6 +7,13 @@ export interface CalendarSource {
   enabled: boolean;
 }
 
+/** Individual calendar exceptions for formatting */
+export interface CalendarException {
+  calendarId: string;
+  showEmojis?: boolean;
+  showCalendarName?: boolean;
+}
+
 /** Per-event user overrides, stored by ICS event UID */
 export interface EventOverride {
   summary?: string;
@@ -31,6 +38,8 @@ export interface UserConfig {
   deduplicateEvents?: boolean;  // Merge duplicate events across calendars
   hidePastEvents?: boolean;     // Automatically filter out events whose end date has passed
   hideLocation?: boolean;       // Strip LOCATION from all events
+  /** Per-calendar formatting overrides */
+  calendarExceptions?: CalendarException[];
   /** Per-event field overrides keyed by ICS event UID */
   eventOverrides?: Record<string, EventOverride>;
   createdAt: number;

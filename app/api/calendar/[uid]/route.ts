@@ -129,8 +129,6 @@ function buildVEvent(event: ParsedEvent, alert1: number, alert2: number): string
 
   lines.push("END:VEVENT");
   return lines.join("\r\n");
-}
-
 function parseICS(
   icsText: string,
   calendarName: string,
@@ -218,6 +216,7 @@ function parseICS(
           end: finalEnd,
           allDay,
           rrule: rruleStr,
+          calendarId: "", // will be filled or used for exception matching if needed
         });
       } catch (evErr) {
         console.warn("[CalSync] Skipped event:", evErr);
@@ -229,6 +228,22 @@ function parseICS(
   return events;
 }
 
+// Update ParsedEvent to include calendarId
+interface ParsedEvent {
+  uid: string;
+  rawSummary: string;
+  calendarName: string;
+  calendarId: string; // Added
+  summary: string;
+  description: string;
+  location: string;
+  url: string;
+  start: string;
+  end: string;
+  allDay: boolean;
+  rrule?: string;
+}
+
 /**
  * Deduplication: group events by (normalizedBaseTitle, startISO).
  * If multiple calendars share the same event, merge their calendar
@@ -237,7 +252,8 @@ function parseICS(
 function deduplicateByTitle(
   events: ParsedEvent[],
   showCalendarName: boolean,
-  showEmojis: boolean
+  showEmojis: boolean,
+  exceptions?: CalendarException[]
 ): ParsedEvent[] {
   // key = normalised title (lowercase, no extra spaces) + start datetime
   const groups = new Map<string, ParsedEvent[]>();
@@ -252,21 +268,40 @@ function deduplicateByTitle(
   const result: ParsedEvent[] = [];
   for (const group of groups.values()) {
     if (group.length === 1) {
-      result.push(group[0]);
+      const ev = group[0];
+      // Even if not a merge, check if this single event needs its summary adjusted if we added prefix in parseICS but exception says no
+      // Actually, it's better to NOT add prefix in parseICS and always add it here or in a separate pass.
+      // But let's follow the existing logic but respect exceptions.
+      result.push(ev);
       continue;
     }
     // Merge: collect unique calendar names in stable order
-    const calNames = [...new Set(group.map((e) => e.calendarName))];
     const base = group[0];
+    const baseRaw = base.rawSummary;
+
+    // Filter calendars that should show their name
+    const calendarsToShowName = group.filter(ev => {
+      const exc = exceptions?.find(e => e.calendarId === ev.calendarId);
+      return exc?.showCalendarName !== undefined ? exc.showCalendarName : showCalendarName;
+    });
 
     let mergedSummary: string;
-    if (showCalendarName) {
+    if (calendarsToShowName.length > 0) {
+      const calNames = [...new Set(calendarsToShowName.map((e) => e.calendarName))];
       const prefix = calNames
-        .map((n) => (showEmojis ? n : stripEmojis(n)).toUpperCase().trim())
+        .map((n) => {
+          // We need to know which calendar this name belongs to to check emoji exception
+          // For simplicity, if ANY included calendar has emojis enabled, we show them in the merged prefix?
+          // No, let's use the first one's setting or global.
+          const firstCalWithThisName = calendarsToShowName.find(e => e.calendarName === n);
+          const exc = exceptions?.find(e => e.calendarId === firstCalWithThisName?.calendarId);
+          const useEmojis = exc?.showEmojis !== undefined ? exc.showEmojis : showEmojis;
+          return (useEmojis ? n : stripEmojis(n)).toUpperCase().trim();
+        })
         .join(" y ");
-      mergedSummary = `${prefix}: ${base.rawSummary}`;
+      mergedSummary = `${prefix}: ${baseRaw}`;
     } else {
-      mergedSummary = base.rawSummary;
+      mergedSummary = baseRaw;
     }
 
     result.push({ ...base, summary: mergedSummary });
@@ -350,11 +385,18 @@ export async function GET(
       continue;
     }
     const { cal, text } = result.value;
-    allEvents.push(...parseICS(text, cal.name, showEmojis, showCalName, overrides, hidePastEvents, hideLocation));
+    const exc = (userConfig.calendarExceptions || []).find((e) => e.calendarId === cal.id);
+    const useEmojis = exc?.showEmojis !== undefined ? exc.showEmojis : showEmojis;
+    const useCalName = exc?.showCalendarName !== undefined ? exc.showCalendarName : showCalName;
+
+    const parsed = parseICS(text, cal.name, useEmojis, useCalName, overrides, hidePastEvents, hideLocation);
+    // Add calendarId to each event for deduplication logic
+    parsed.forEach(ev => { ev.calendarId = cal.id; });
+    allEvents.push(...parsed);
   }
 
   // Always deduplicate to ensure "no repeats"
-  allEvents = deduplicateByTitle(allEvents, showCalName, showEmojis);
+  allEvents = deduplicateByTitle(allEvents, showCalName, showEmojis, userConfig.calendarExceptions);
 
   const now = toIcalDate(new Date().toISOString(), false);
 

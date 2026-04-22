@@ -6,7 +6,7 @@ import { signOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
-import { UserConfig, CalendarSource, ALERT_OPTIONS, EventOverride } from "@/lib/types";
+import { UserConfig, CalendarSource, ALERT_OPTIONS, EventOverride, CalendarException } from "@/lib/types";
 import styles from "./page.module.css";
 
 // ─── Helper types ─────────────────────────────────────────────────────────────
@@ -54,11 +54,18 @@ function formatEventTitle(
   rawSummary: string,
   calName: string,
   showEmojis: boolean,
-  showCalName: boolean
+  showCalName: boolean,
+  calendarId?: string,
+  exceptions?: CalendarException[]
 ): string {
-  const title = showEmojis ? rawSummary : stripEmojisClient(rawSummary);
-  if (showCalName) {
-    const prefix = (showEmojis ? calName : stripEmojisClient(calName)).toUpperCase().trim();
+  // Check for calendar-specific exception
+  const exc = exceptions?.find((e) => e.calendarId === calendarId);
+  const finalShowEmojis = exc?.showEmojis !== undefined ? exc.showEmojis : showEmojis;
+  const finalShowCalName = exc?.showCalendarName !== undefined ? exc.showCalendarName : showCalName;
+
+  const title = finalShowEmojis ? rawSummary : stripEmojisClient(rawSummary);
+  if (finalShowCalName) {
+    const prefix = (finalShowEmojis ? calName : stripEmojisClient(calName)).toUpperCase().trim();
     return `${prefix}: ${title}`;
   }
   return title;
@@ -115,6 +122,7 @@ const DEFAULT_CONFIG_FIELDS = {
   hidePastEvents: false,
   hideLocation: false,
   eventOverrides: {} as Record<string, EventOverride>,
+  calendarExceptions: [] as CalendarException[],
   updatedAt: Date.now(),
 };
 
@@ -152,6 +160,14 @@ export default function Dashboard() {
   const [editingCal, setEditingCal] = useState<CalendarSource | null>(null);
   const [editName, setEditName] = useState("");
   const [editUrl, setEditUrl] = useState("");
+  const [editingCalException, setEditingCalException] = useState<CalendarException | null>(null);
+
+  // Exceptions modal
+  const [exceptionsOpen, setExceptionsOpen] = useState(false);
+  const [addingException, setAddingException] = useState(false);
+  const [newExcCalId, setNewExcCalId] = useState("");
+  const [newExcEmojis, setNewExcEmojis] = useState(false);
+  const [newExcName, setNewExcName] = useState(true);
 
   // Collapsible calendar section
   const [calsExpanded, setCalsExpanded] = useState(false);
@@ -286,7 +302,9 @@ export default function Dashboard() {
     sampleEvent,
     "Formula 1",
     showEmojis,
-    showCalName
+    showCalName,
+    undefined,
+    cfg.calendarExceptions
   );
   const webcalUrl = origin ? `webcal://${origin.replace(/^https?:\/\//, "")}/api/calendar/${cfg.uid}` : "";
   const httpsUrl = origin ? `${origin}/api/calendar/${cfg.uid}` : "";
@@ -445,6 +463,58 @@ export default function Dashboard() {
     await saveConfig({ ...config, eventOverrides: updated }, "Evento restaurado");
     setEditingEvent(null);
     await openPreview(previewCalId, previewCalName).catch(() => { });
+  };
+
+  // ─── Calendar Exceptions ──────────────────────────────────────────────────
+
+  const handleOpenAddException = () => {
+    setAddingException(true);
+    setEditingCalException(null);
+    // Default to first calendar not already in exceptions
+    const existingIds = new Set((config?.calendarExceptions || []).map(e => e.calendarId));
+    const available = (config?.calendars || []).filter(c => !existingIds.has(c.id));
+    if (available.length > 0) {
+      setNewExcCalId(available[0].id);
+    } else {
+      setNewExcCalId("");
+    }
+    setNewExcEmojis(config?.showEmojis ?? false);
+    setNewExcName(config?.showCalendarName ?? true);
+  };
+
+  const handleOpenEditException = (exc: CalendarException) => {
+    setEditingCalException(exc);
+    setNewExcCalId(exc.calendarId);
+    setNewExcEmojis(exc.showEmojis ?? config?.showEmojis ?? false);
+    setNewExcName(exc.showCalendarName ?? config?.showCalendarName ?? true);
+    setAddingException(true);
+  };
+
+  const handleSaveException = async () => {
+    if (!config || !newExcCalId) return;
+    const current = config.calendarExceptions || [];
+    let updated: CalendarException[];
+
+    if (editingCalException) {
+      updated = current.map(e => e.calendarId === editingCalException.calendarId ? { ...e, showEmojis: newExcEmojis, showCalendarName: newExcName } : e);
+    } else {
+      // Check if already exists
+      if (current.some(e => e.calendarId === newExcCalId)) {
+        showToast("Este calendario ya tiene una excepción", "error");
+        return;
+      }
+      updated = [...current, { calendarId: newExcCalId, showEmojis: newExcEmojis, showCalendarName: newExcName }];
+    }
+
+    await saveConfig({ ...config, calendarExceptions: updated }, "Excepción guardada");
+    setAddingException(false);
+    setEditingCalException(null);
+  };
+
+  const handleDeleteException = async (calId: string) => {
+    if (!config) return;
+    const updated = (config.calendarExceptions || []).filter(e => e.calendarId !== calId);
+    await saveConfig({ ...config, calendarExceptions: updated }, "Excepción eliminada");
   };
 
   // ─── Share / Receive ──────────────────────────────────────────────────────
@@ -821,6 +891,18 @@ export default function Dashboard() {
             </li>
           </ul>
 
+          <button
+            className={styles.btnAddCal}
+            style={{ marginTop: "10px", borderStyle: "solid", borderWidth: "1px" }}
+            onClick={() => setExceptionsOpen(true)}
+          >
+            <svg viewBox="0 0 24 24" fill="none" width="16" height="16" aria-hidden>
+              <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke="currentColor" strokeWidth="2" />
+              <path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            Excepciones
+          </button>
+
           <div className={styles.formatPreview}>
             <span className={styles.formatPreviewLabel}>Vista previa</span>
             <code className={styles.formatPreviewCode}>{previewTitle}</code>
@@ -940,7 +1022,7 @@ export default function Dashboard() {
                         {ev.allDay ? "Todo el día" : formatTime(ev.start)}
                       </span>
                       <span className={styles.eventTitle}>
-                        {formatEventTitle(ev.summary, ev.calendarName, showEmojis, showCalName)}
+                        {formatEventTitle(ev.summary, ev.calendarName, showEmojis, showCalName, ev.calendarId, cfg.calendarExceptions)}
                       </span>
                       <button
                         className={styles.editEventBtn}
@@ -1106,7 +1188,121 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Receive CalSync Popup ──────────────────────────────────────────── */}
+      {/* ── Exceptions Management Modal ────────────────────────────────────── */}
+      {exceptionsOpen && (
+        <div className={styles.modalOverlay} onClick={() => { setExceptionsOpen(false); setAddingException(false); }}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal aria-label="Gestionar excepciones">
+            <div className={styles.receiveHeader}>
+              <h3 className={styles.modalTitle}>Excepciones por Calendario</h3>
+              <button className={styles.closeBtn} onClick={() => { setExceptionsOpen(false); setAddingException(false); }} aria-label="Cerrar">
+                <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+
+            {!addingException ? (
+              <>
+                <p className={styles.cardDesc}>Reglas personalizadas para calendarios específicos.</p>
+                <ul className={styles.calList} style={{ maxHeight: "300px", overflowY: "auto" }}>
+                  {(cfg.calendarExceptions || []).length === 0 ? (
+                    <li className={styles.calItem}>
+                      <span className={styles.cardNote}>No hay excepciones configuradas.</span>
+                    </li>
+                  ) : (
+                    (cfg.calendarExceptions || []).map((exc) => {
+                      const cal = cfg.calendars.find(c => c.id === exc.calendarId);
+                      return (
+                        <li key={exc.calendarId} className={styles.calItem}>
+                          <div className={styles.calInfo}>
+                            <span className={styles.calName}>{cal?.name || "Calendario eliminado"}</span>
+                            <span className={styles.calUrlFull}>
+                              {exc.showEmojis ? "Con emojis" : "Sin emojis"} · {exc.showCalendarName ? "Con nombre" : "Sin nombre"}
+                            </span>
+                          </div>
+                          <div className={styles.calActions}>
+                            <button className={styles.iconBtn} onClick={() => handleOpenEditException(exc)} title="Editar">
+                              <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" fill="currentColor" />
+                              </svg>
+                            </button>
+                            <button className={`${styles.iconBtn} ${styles.iconBtnDanger}`} onClick={() => handleDeleteException(exc.calendarId)} title="Eliminar">
+                              <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+                                <path d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" fill="currentColor" />
+                              </svg>
+                            </button>
+                          </div>
+                        </li>
+                      );
+                    })
+                  )}
+                </ul>
+                <button className={styles.btnAddCal} onClick={handleOpenAddException} style={{ marginTop: "10px" }}>
+                  Agregar excepción
+                </button>
+              </>
+            ) : (
+              <div className={styles.addForm}>
+                <div className={styles.formField}>
+                  <label className={styles.label}>Calendario</label>
+                  <select
+                    className={styles.select}
+                    value={newExcCalId}
+                    onChange={(e) => setNewExcCalId(e.target.value)}
+                    disabled={!!editingCalException}
+                    style={{ width: "100%" }}
+                  >
+                    {cfg.calendars.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className={styles.calList} style={{ marginTop: "8px" }}>
+                  <div className={styles.calItem}>
+                    <div className={styles.calItemLeft}>
+                      <button
+                        className={`${styles.toggleBtn} ${newExcEmojis ? styles.toggleOff : styles.toggleOn}`}
+                        onClick={() => setNewExcEmojis(!newExcEmojis)}
+                      >
+                        <span className={styles.toggleThumb} />
+                      </button>
+                      <div className={styles.calInfo}>
+                        <span className={styles.calName}>Eliminar emojis</span>
+                        <span className={styles.calUrlFull}>Oculta emojis en este calendario</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className={styles.calItem}>
+                    <div className={styles.calItemLeft}>
+                      <button
+                        className={`${styles.toggleBtn} ${newExcName ? styles.toggleOn : styles.toggleOff}`}
+                        onClick={() => setNewExcName(!newExcName)}
+                      >
+                        <span className={styles.toggleThumb} />
+                      </button>
+                      <div className={styles.calInfo}>
+                        <span className={styles.calName}>Mostrar nombre</span>
+                        <span className={styles.calUrlFull}>Prefija el nombre de este calendario</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.formActions} style={{ marginTop: "12px" }}>
+                  <button className={styles.btnPrimary} onClick={handleSaveException} disabled={saving || !newExcCalId}>
+                    {saving ? "Guardando..." : "Guardar excepción"}
+                  </button>
+                  <button className={styles.btnSecondary} onClick={() => { setAddingException(false); setEditingCalException(null); }}>
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {receivePopup && (
         <div className={styles.modalOverlay} onClick={() => { setReceivePopup(false); setExternalData(null); }}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal aria-label="Recibir calendarios">
