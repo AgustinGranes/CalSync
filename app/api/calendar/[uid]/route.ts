@@ -375,8 +375,9 @@ export async function GET(
     const exc = (userConfig.calendarExceptions || []).find((e) => e.calendarId === cal.id);
     const useEmojis = exc?.showEmojis !== undefined ? exc.showEmojis : showEmojis;
     const useCalName = exc?.showCalendarName !== undefined ? exc.showCalendarName : showCalName;
+    const useHideLocation = exc?.hideLocation !== undefined ? exc.hideLocation : hideLocation;
 
-    const parsed = parseICS(text, cal.name, useEmojis, useCalName, overrides, hidePastEvents, hideLocation);
+    const parsed = parseICS(text, cal.name, useEmojis, useCalName, overrides, hidePastEvents, useHideLocation);
     // Add calendarId to each event for deduplication logic
     parsed.forEach(ev => { ev.calendarId = cal.id; });
     allEvents.push(...parsed);

@@ -168,6 +168,7 @@ export default function Dashboard() {
   const [newExcCalId, setNewExcCalId] = useState("");
   const [newExcEmojis, setNewExcEmojis] = useState(false);
   const [newExcName, setNewExcName] = useState(true);
+  const [newExcHideLoc, setNewExcHideLoc] = useState(false);
 
   // Collapsible calendar section
   const [calsExpanded, setCalsExpanded] = useState(false);
@@ -480,6 +481,7 @@ export default function Dashboard() {
     }
     setNewExcEmojis(config?.showEmojis ?? false);
     setNewExcName(config?.showCalendarName ?? true);
+    setNewExcHideLoc(config?.hideLocation ?? false);
   };
 
   const handleOpenEditException = (exc: CalendarException) => {
@@ -487,6 +489,7 @@ export default function Dashboard() {
     setNewExcCalId(exc.calendarId);
     setNewExcEmojis(exc.showEmojis ?? config?.showEmojis ?? false);
     setNewExcName(exc.showCalendarName ?? config?.showCalendarName ?? true);
+    setNewExcHideLoc(exc.hideLocation ?? config?.hideLocation ?? false);
     setAddingException(true);
   };
 
@@ -496,14 +499,14 @@ export default function Dashboard() {
     let updated: CalendarException[];
 
     if (editingCalException) {
-      updated = current.map(e => e.calendarId === editingCalException.calendarId ? { ...e, showEmojis: newExcEmojis, showCalendarName: newExcName } : e);
+      updated = current.map(e => e.calendarId === editingCalException.calendarId ? { ...e, showEmojis: newExcEmojis, showCalendarName: newExcName, hideLocation: newExcHideLoc } : e);
     } else {
       // Check if already exists
       if (current.some(e => e.calendarId === newExcCalId)) {
         showToast("Este calendario ya tiene una excepción", "error");
         return;
       }
-      updated = [...current, { calendarId: newExcCalId, showEmojis: newExcEmojis, showCalendarName: newExcName }];
+      updated = [...current, { calendarId: newExcCalId, showEmojis: newExcEmojis, showCalendarName: newExcName, hideLocation: newExcHideLoc }];
     }
 
     await saveConfig({ ...config, calendarExceptions: updated }, "Excepción guardada");
@@ -1218,6 +1221,7 @@ export default function Dashboard() {
                             <span className={styles.calName}>{cal?.name || "Calendario eliminado"}</span>
                             <span className={styles.calUrlFull}>
                               {exc.showEmojis ? "Con emojis" : "Sin emojis"} · {exc.showCalendarName ? "Con nombre" : "Sin nombre"}
+                              {exc.hideLocation && " · Sin ubicación"}
                             </span>
                           </div>
                           <div className={styles.calActions}>
@@ -1284,6 +1288,20 @@ export default function Dashboard() {
                       <div className={styles.calInfo}>
                         <span className={styles.calName}>Mostrar nombre</span>
                         <span className={styles.calUrlFull}>Prefija el nombre de este calendario</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className={styles.calItem}>
+                    <div className={styles.calItemLeft}>
+                      <button
+                        className={`${styles.toggleBtn} ${newExcHideLoc ? styles.toggleOn : styles.toggleOff}`}
+                        onClick={() => setNewExcHideLoc(!newExcHideLoc)}
+                      >
+                        <span className={styles.toggleThumb} />
+                      </button>
+                      <div className={styles.calInfo}>
+                        <span className={styles.calName}>Eliminar ubicación</span>
+                        <span className={styles.calUrlFull}>Quita la ubicación para este calendario</span>
                       </div>
                     </div>
                   </div>

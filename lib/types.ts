@@ -12,6 +12,7 @@ export interface CalendarException {
   calendarId: string;
   showEmojis?: boolean;
   showCalendarName?: boolean;
+  hideLocation?: boolean;
 }
 
 /** Per-event user overrides, stored by ICS event UID */

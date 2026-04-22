@@ -161,7 +161,9 @@ export async function GET(request: Request) {
           });
           if (!res.ok) return;
           const text = await res.text();
-          allEvents.push(...parseCalendarToRaw(text, cal, overrides, hidePastEvents, hideLocation));
+          const exc = (config.calendarExceptions || []).find((e) => e.calendarId === cal.id);
+          const useHideLocation = exc?.hideLocation !== undefined ? exc.hideLocation : hideLocation;
+          allEvents.push(...parseCalendarToRaw(text, cal, overrides, hidePastEvents, useHideLocation));
         } catch {
           // skip failing calendars silently
         }
@@ -187,7 +189,9 @@ export async function GET(request: Request) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
 
-    const events = parseCalendarToRaw(text, cal, overrides, hidePastEvents, hideLocation);
+    const exc = (config.calendarExceptions || []).find((e) => e.calendarId === cal.id);
+    const useHideLocation = exc?.hideLocation !== undefined ? exc.hideLocation : hideLocation;
+    const events = parseCalendarToRaw(text, cal, overrides, hidePastEvents, useHideLocation);
     events.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
 
     // Deduplicate within the same calendar as well
