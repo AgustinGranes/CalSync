@@ -2,27 +2,11 @@ import { NextResponse } from "next/server";
 // @ts-ignore — ical.js ships its own types
 import ICAL from "ical.js";
 import { getAdminFirestore } from "@/lib/firebase-admin";
-import { UserConfig, EventOverride } from "@/lib/types";
+import { UserConfig, EventOverride, CalendarException } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const runtime = "nodejs";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface ParsedEvent {
-  uid: string;
-  rawSummary: string;   // base title BEFORE calendar prefix (for dedup key)
-  calendarName: string; // source calendar name (for prefix building)
-  summary: string;      // final formatted summary (written to ICS)
-  description: string;
-  location: string;
-  url: string;
-  start: string;
-  end: string;
-  allDay: boolean;
-  rrule?: string;
-}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -129,6 +113,8 @@ function buildVEvent(event: ParsedEvent, alert1: number, alert2: number): string
 
   lines.push("END:VEVENT");
   return lines.join("\r\n");
+}
+
 function parseICS(
   icsText: string,
   calendarName: string,
@@ -228,13 +214,14 @@ function parseICS(
   return events;
 }
 
-// Update ParsedEvent to include calendarId
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 interface ParsedEvent {
   uid: string;
-  rawSummary: string;
-  calendarName: string;
-  calendarId: string; // Added
-  summary: string;
+  rawSummary: string;   // base title BEFORE calendar prefix (for dedup key)
+  calendarName: string; // source calendar name (for prefix building)
+  calendarId: string;   // source calendar ID (for exception matching)
+  summary: string;      // final formatted summary (written to ICS)
   description: string;
   location: string;
   url: string;
