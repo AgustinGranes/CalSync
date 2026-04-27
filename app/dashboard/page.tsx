@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 import { UserConfig, CalendarSource, ALERT_OPTIONS, EventOverride, CalendarException } from "@/lib/types";
 import styles from "./page.module.css";
 
-// ─── Helper types ─────────────────────────────────────────────────────────────
+/* --- Helper types ------------------------------------------------------------- */
 
 interface RawEvent {
   uid: string;
@@ -35,7 +35,7 @@ interface ExternalCalData {
   calendars: { id: string; name: string; url: string }[];
 }
 
-// ─── Helper functions ─────────────────────────────────────────────────────────
+/* --- Helper functions --------------------------------------------------------- */
 
 function generateId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -71,7 +71,7 @@ function formatEventTitle(
   return title;
 }
 
-// ─── Marquee Component ──────────────────────────────────────────────────────
+/* --- Marquee Component ------------------------------------------------------ */
 
 function MarqueeTitle({
   title,
@@ -192,7 +192,7 @@ const DEFAULT_CONFIG_FIELDS = {
   updatedAt: Date.now(),
 };
 
-// ─── Component ────────────────────────────────────────────────────────────────
+/* --- Component ---------------------------------------------------------------- */
 
 export default function Dashboard() {
   const { user, loading } = useAuth();
@@ -307,7 +307,7 @@ export default function Dashboard() {
     if (!loading && !user) router.push("/");
   }, [user, loading, router]);
 
-  // ─── Load config ─────────────────────────────────────────────────────────
+  /* --- Load config --------------------------------------------------------- */
 
   const loadConfig = useCallback(async () => {
     if (!user) return;
@@ -345,7 +345,7 @@ export default function Dashboard() {
 
   useEffect(() => { loadConfig(); }, [loadConfig]);
 
-  // ─── Save config ─────────────────────────────────────────────────────────
+  /* --- Save config --------------------------------------------------------- */
 
   const saveConfig = async (newCfg: UserConfig, toastMsg = "Guardado") => {
     if (!user) return;
@@ -363,7 +363,7 @@ export default function Dashboard() {
     }
   };
 
-  // ─── Derived ─────────────────────────────────────────────────────────────
+  /* --- Derived ------------------------------------------------------------- */
 
   if (loading || (!config && !configError)) {
     return (
@@ -414,7 +414,7 @@ export default function Dashboard() {
   const webcalUrl = origin ? `webcal://${origin.replace(/^https?:\/\//, "")}/api/calendar/${cfg.uid}` : "";
   const httpsUrl = origin ? `${origin}/api/calendar/${cfg.uid}` : "";
 
-  // ─── Calendar link actions ────────────────────────────────────────────────
+  /* --- Calendar link actions ------------------------------------------------ */
 
   const handleSubscribe = () => { if (webcalUrl) window.open(webcalUrl, "_blank"); };
   const handleCopy = async () => {
@@ -425,7 +425,7 @@ export default function Dashboard() {
   };
   const handleLogout = () => signOut(auth);
 
-  // ─── Calendar CRUD ────────────────────────────────────────────────────────
+  /* --- Calendar CRUD -------------------------------------------------------- */
 
   const handleAddCalendar = async () => {
     if (!config) return;
@@ -474,7 +474,7 @@ export default function Dashboard() {
     setEditingCal(null);
   };
 
-  // ─── Alert settings ───────────────────────────────────────────────────────
+  /* --- Alert settings ------------------------------------------------------- */
 
   const handleAlertChange = async (field: "alert1Minutes" | "alert2Minutes", value: number) => {
     if (!config) return;
@@ -483,7 +483,7 @@ export default function Dashboard() {
     await saveConfig(updated, "Alerta actualizada");
   };
 
-  // ─── Format settings ──────────────────────────────────────────────────────
+  /* --- Format settings ------------------------------------------------------ */
 
   const handleToggleFormat = async (field: "showEmojis" | "showCalendarName" | "deduplicateEvents" | "hidePastEvents" | "hideLocation") => {
     if (!config) return;
@@ -492,7 +492,7 @@ export default function Dashboard() {
     await saveConfig(updated, "Formato actualizado");
   };
 
-  // ─── Event preview (single calendar or all) ───────────────────────────────
+  /* --- Event preview (single calendar or all) ------------------------------- */
 
   const openPreview = async (calId: string, calName: string) => {
     setPreviewOpen(true);
@@ -536,7 +536,7 @@ export default function Dashboard() {
     setPendingOverrides({});
   };
 
-  // ─── Edit individual event override ──────────────────────────────────────
+  /* --- Edit individual event override -------------------------------------- */
 
   const handleOpenEditEvent = (ev: RawEvent) => {
     setEditingEvent(ev);
@@ -630,7 +630,7 @@ export default function Dashboard() {
     }
   };
 
-  // ─── Calendar Exceptions ──────────────────────────────────────────────────
+  /* --- Calendar Exceptions -------------------------------------------------- */
 
   const handleOpenAddException = () => {
     setAddingException(true);
@@ -684,7 +684,7 @@ export default function Dashboard() {
     await saveConfig({ ...config, calendarExceptions: updated }, "Excepción eliminada");
   };
 
-  // ─── Share / Receive ──────────────────────────────────────────────────────
+  /* --- Share / Receive ------------------------------------------------------ */
 
   const handleShare = async () => {
     if (!user || !origin) return;
@@ -769,7 +769,7 @@ export default function Dashboard() {
     setExternalData(null);
   };
 
-  // ─── Render ───────────────────────────────────────────────────────────────
+  /* --- Render --------------------------------------------------------------- */
 
   return (
     <main className={styles.main}>
@@ -779,7 +779,7 @@ export default function Dashboard() {
 
       <div className={styles.container}>
 
-        {/* ── Top Bar ──────────────────────────────────────────────────────── */}
+        /* --- Top Bar -------------------------------------------------------- */
         <header className={styles.topBar}>
           <div className={styles.logoWrap}>
             <svg className={styles.logoIcon} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
@@ -812,7 +812,7 @@ export default function Dashboard() {
           </div>
         </header>
 
-        {/* ── Personal Link Card ────────────────────────────────────────────── */}
+        /* --- Personal Link Card ---------------------------------------------- */
         <section className={styles.card} aria-label="Tu enlace personal">
           <div className={styles.cardHeader}>
             <div className={styles.cardIconWrap}>
@@ -847,7 +847,7 @@ export default function Dashboard() {
           </p>
         </section>
 
-        {/* ── Calendars Card (collapsible) ──────────────────────────────────── */}
+        /* --- Calendars Card (collapsible) ------------------------------------ */
         <section className={styles.card} aria-label="Gestión de calendarios">
 
           {/* Header row: toggle button + "Ver todo" button */}
@@ -963,7 +963,7 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* ── Format Settings Card ──────────────────────────────────────────── */}
+        /* --- Format Settings Card -------------------------------------------- */
         <section className={styles.card} aria-label="Ajustes de Eventos">
           <div className={styles.cardHeader}>
             <div className={styles.cardIconWrap}>
@@ -1077,7 +1077,7 @@ export default function Dashboard() {
         </section>
 
 
-        {/* ── Share / Receive Card ──────────────────────────────────────────── */}
+        /* --- Share / Receive Card -------------------------------------------- */
         <section className={styles.card} aria-label="Compartir y recibir calendarios">
           <div className={styles.cardHeader}>
             <div className={styles.cardIconWrap}>
@@ -1114,7 +1114,7 @@ export default function Dashboard() {
         </footer>
       </div>
 
-      {/* ── Toast notification ─────────────────────────────────────────────── */}
+      /* --- Toast notification ----------------------------------------------- */
       <div
         className={`${styles.toast} ${toast ? styles.toastVisible : ""} ${toastType === "error" ? styles.toastError : ""}`}
         role="status"
@@ -1134,7 +1134,7 @@ export default function Dashboard() {
         {toast}
       </div>
 
-      {/* ── Edit Calendar Modal ────────────────────────────────────────────── */}
+      /* --- Edit Calendar Modal ---------------------------------------------- */
       {editingCal && (
         <div className={styles.modalOverlay} onClick={() => setEditingCal(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal aria-label="Editar calendario">
@@ -1155,7 +1155,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Event Preview Modal (single cal OR all) ──────────────────────── */}
+      /* --- Event Preview Modal (single cal OR all) ------------------------ */
       {previewOpen && (
         <div className={styles.modalOverlay} onClick={closePreview}>
           <div className={styles.previewModal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal>
@@ -1273,7 +1273,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Edit Event Override Modal ─────────────────────────────────────── */}
+      /* --- Edit Event Override Modal --------------------------------------- */
       {editingEvent && (
         <div className={styles.modalOverlay} onClick={() => setEditingEvent(null)}>
           <div
@@ -1408,7 +1408,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Exceptions Management Modal ────────────────────────────────────── */}
+      /* --- Exceptions Management Modal -------------------------------------- */
       {exceptionsOpen && (
         <div className={styles.modalOverlay} onClick={() => { setExceptionsOpen(false); setAddingException(false); }}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal aria-label="Gestionar excepciones">
@@ -1613,11 +1613,8 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-          </div>
-        </div>
-      )}
 
-      {/* ── Exit Confirmation Popup ────────────────────────────────────────── */}
+      {/* --- Exit Confirmation Popup ------------------------------------------ */}
       {showExitConfirm && (
         <div className={styles.modalOverlay} style={{ zIndex: 1100 }}>
           <div className={styles.confirmModal}>
