@@ -851,12 +851,14 @@
   font-weight: 700;
   color: var(--text-primary);
   margin: 0 0 3px;
+  text-align: left !important;
 }
 
 .previewSubtitle {
   font-size: 0.78rem;
   color: var(--text-tertiary);
   margin: 0;
+  text-align: left !important;
 }
 
 .previewBody {
@@ -1226,24 +1228,33 @@
   position: relative;
   overflow: hidden;
   width: 100%;
+  display: flex;
   mask-image: linear-gradient(to right, black 85%, transparent 100%);
   -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+}
+
+.marqueeTrack {
+  display: flex;
+  white-space: nowrap;
+  will-change: transform;
 }
 
 .marqueeText {
   display: inline-block;
   white-space: nowrap;
-  padding-right: 30px;
-  will-change: transform;
 }
 
-.marqueeAnimate {
-  animation: marquee var(--duration) linear forwards;
+.marqueeTextScroll {
+  padding-right: 40px;
 }
 
-@keyframes marquee {
+.marqueeAnimateInfinite {
+  animation: marqueeInfinite var(--duration) linear infinite;
+}
+
+@keyframes marqueeInfinite {
   0% { transform: translateX(0); }
-  100% { transform: translateX(-100%); }
+  100% { transform: translateX(-50%); }
 }
 
 /* ─── Confirm Modal ──────────────────────────────────────────────────────── */

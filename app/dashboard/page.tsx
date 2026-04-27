@@ -78,40 +78,37 @@ function MarqueeTitle({ title }: { title: string }) {
   const textRef = useRef<HTMLSpanElement>(null);
   const [shouldScroll, setShouldScroll] = useState(false);
   const [scrollDuration, setScrollDuration] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(true);
 
   useEffect(() => {
     if (containerRef.current && textRef.current) {
       const containerWidth = containerRef.current.offsetWidth;
       const textWidth = textRef.current.offsetWidth;
-      const overflows = textWidth > containerWidth;
       
-      if (overflows) {
+      if (textWidth > containerWidth) {
         setShouldScroll(true);
-        setScrollDuration((textWidth) / 40); // 40px/s
+        // Add 40 to account for the padding added by marqueeTextScroll
+        setScrollDuration((textWidth + 40) / 40); // 40px/s
       } else {
         setShouldScroll(false);
       }
     }
   }, [title]);
 
-  const handleAnimationEnd = () => {
-    setIsAnimating(false);
-    setTimeout(() => {
-      setIsAnimating(true);
-    }, 2000); // 2 second pause
-  };
-
   return (
     <div ref={containerRef} className={styles.marqueeContainer}>
-      <span
-        ref={textRef}
-        className={`${styles.marqueeText} ${isAnimating && shouldScroll ? styles.marqueeAnimate : ""}`}
+      <div 
+        className={`${styles.marqueeTrack} ${shouldScroll ? styles.marqueeAnimateInfinite : ""}`}
         style={{ "--duration": `${scrollDuration}s` } as any}
-        onAnimationEnd={handleAnimationEnd}
       >
-        {title}
-      </span>
+        <span ref={textRef} className={`${styles.marqueeText} ${shouldScroll ? styles.marqueeTextScroll : ""}`}>
+          {title}
+        </span>
+        {shouldScroll && (
+          <span className={`${styles.marqueeText} ${styles.marqueeTextScroll}`}>
+            {title}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -1203,8 +1200,9 @@ export default function Dashboard() {
                               aria-label={isDeleted ? `Restaurar ${ev.summary}` : `Eliminar ${ev.summary}`}
                             >
                               {isDeleted ? (
-                                <svg viewBox="0 0 24 24" fill="none" width="13" height="13">
-                                  <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                                  <path d="M3 3v5h5" />
                                 </svg>
                               ) : (
                                 <svg viewBox="0 0 20 20" fill="none" width="13" height="13">
