@@ -1134,30 +1134,6 @@
 }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
-/* --- Loading Brand Screen -------------------------------------------------- */
-.loadingBrand {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-}
-
-.loadingLogo {
-  width: 56px;
-  height: 56px;
-  animation: fadeUp 0.5s var(--ease-out) both;
-}
-
-.loadingLogoText {
-  font-size: 1.6rem;
-  font-weight: 700;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: fadeUp 0.5s var(--ease-out) 0.1s both;
-}
-
 /* --- Edit Mode & Preview UI ------------------------------------------------ */
 .previewTitleRow {
   display: flex;
