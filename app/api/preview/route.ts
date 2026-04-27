@@ -90,9 +90,9 @@ function parseCalendarToRaw(
         const startIso = startDate.toISOString();
         const uid = event.uid || makeUid(cal.name, startIso, rawSummary);
 
-        // Apply override if present
+        // Do NOT filter out deleted events in the preview API, 
+        // because the dashboard needs to show them as struck-through and allow restoring.
         const ov = overrides[uid];
-        if (ov?.deleted) continue;
 
         const finalEnd = ov?.end !== undefined ? ov.end : (endDate ? endDate.toISOString() : startIso);
 
