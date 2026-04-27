@@ -829,11 +829,14 @@
   flex-direction: column;
   flex: 1;
   min-width: 0;
+  text-align: left;
+  align-items: flex-start;
 }
 
 .previewTitleWrap {
   flex: 1;
   min-width: 0;
+  text-align: left;
 }
 
 .previewHeaderActions {
@@ -1215,6 +1218,25 @@
   opacity: 0.5;
   text-decoration: line-through;
   background: rgba(239, 68, 68, 0.03);
+  position: relative;
+}
+
+.deletedBadge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(239, 68, 68, 0.95);
+  color: white;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  z-index: 10;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
 }
 
 .btnRestore {

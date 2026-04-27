@@ -73,24 +73,12 @@ function formatEventTitle(
 
 /* --- Marquee Component ------------------------------------------------------ */
 
-function MarqueeTitle({
-  title,
-  active,
-  onFinish,
-  onMount,
-  onUnmount
-}: {
-  title: string;
-  active: boolean;
-  onFinish: () => void;
-  onMount: (overflows: boolean) => void;
-  onUnmount: (overflows: boolean) => void;
-}) {
+function MarqueeTitle({ title }: { title: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
   const [shouldScroll, setShouldScroll] = useState(false);
   const [scrollDuration, setScrollDuration] = useState(0);
-  const wasOverflowing = useRef(false);
+  const [isAnimating, setIsAnimating] = useState(true);
 
   useEffect(() => {
     if (containerRef.current && textRef.current) {
@@ -98,12 +86,6 @@ function MarqueeTitle({
       const textWidth = textRef.current.offsetWidth;
       const overflows = textWidth > containerWidth;
       
-      if (overflows !== wasOverflowing.current) {
-        if (overflows) onMount(true);
-        else if (wasOverflowing.current) onUnmount(true);
-        wasOverflowing.current = overflows;
-      }
-
       if (overflows) {
         setShouldScroll(true);
         setScrollDuration((textWidth) / 40); // 40px/s
@@ -111,23 +93,20 @@ function MarqueeTitle({
         setShouldScroll(false);
       }
     }
-  }, [title, onMount, onUnmount]);
-
-  useEffect(() => {
-    return () => {
-      if (wasOverflowing.current) onUnmount(true);
-    };
-  }, [onUnmount]);
+  }, [title]);
 
   const handleAnimationEnd = () => {
-    onFinish();
+    setIsAnimating(false);
+    setTimeout(() => {
+      setIsAnimating(true);
+    }, 2000); // 2 second pause
   };
 
   return (
     <div ref={containerRef} className={styles.marqueeContainer}>
       <span
         ref={textRef}
-        className={`${styles.marqueeText} ${active && shouldScroll ? styles.marqueeAnimate : ""}`}
+        className={`${styles.marqueeText} ${isAnimating && shouldScroll ? styles.marqueeAnimate : ""}`}
         style={{ "--duration": `${scrollDuration}s` } as any}
         onAnimationEnd={handleAnimationEnd}
       >
@@ -141,7 +120,10 @@ function groupEventsByDay(events: RawEvent[]): DayGroup[] {
   const map = new Map<string, DayGroup>();
   for (const ev of events) {
     const d = new Date(ev.start);
-    const key = d.toISOString().slice(0, 10);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const key = `${year}-${month}-${day}`;
     if (!map.has(key)) {
       map.set(key, {
         key,
@@ -150,7 +132,7 @@ function groupEventsByDay(events: RawEvent[]): DayGroup[] {
           day: "numeric",
           month: "long",
           year: "numeric",
-        }),
+        }).toUpperCase(),
         events: [],
       });
     }
@@ -267,26 +249,6 @@ export default function Dashboard() {
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
-  // ── Marquee Synchronization ────────────────────────────────────────────────
-  const [marqueeActive, setMarqueeActive] = useState(false);
-  const marqueeCount = useRef(0);
-  const marqueeFinishedCount = useRef(0);
-
-  useEffect(() => {
-    // Initial delay before first marquee
-    const timer = setTimeout(() => setMarqueeActive(true), 3000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handleMarqueeFinish = useCallback(() => {
-    marqueeFinishedCount.current++;
-    if (marqueeFinishedCount.current >= marqueeCount.current) {
-      setMarqueeActive(false);
-      marqueeFinishedCount.current = 0;
-      // Wait before restarting
-      setTimeout(() => setMarqueeActive(true), 3000);
-    }
-  }, []);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -597,15 +559,20 @@ export default function Dashboard() {
 
   const handleDeleteEventOverride = async (ev: RawEvent) => {
     if (!config) return;
+
+    const isCurrentlyDeleted = (pendingOverrides[ev.uid]?.deleted !== undefined) 
+      ? pendingOverrides[ev.uid].deleted 
+      : config.eventOverrides?.[ev.uid]?.deleted;
+
     if (isEditMode) {
       const current = pendingOverrides[ev.uid] || config.eventOverrides?.[ev.uid] || {};
-      setPendingOverrides(prev => ({ ...prev, [ev.uid]: { ...current, deleted: true } }));
+      setPendingOverrides(prev => ({ ...prev, [ev.uid]: { ...current, deleted: !isCurrentlyDeleted } }));
       if (editingEvent?.uid === ev.uid) setEditingEvent(null);
     } else {
       const currentOverrides = config.eventOverrides ?? {};
       const current = currentOverrides[ev.uid] || {};
-      const updatedOverrides = { ...currentOverrides, [ev.uid]: { ...current, deleted: true } };
-      await saveConfig({ ...config, eventOverrides: updatedOverrides }, "Evento eliminado");
+      const updatedOverrides = { ...currentOverrides, [ev.uid]: { ...current, deleted: !isCurrentlyDeleted } };
+      await saveConfig({ ...config, eventOverrides: updatedOverrides }, isCurrentlyDeleted ? "Evento restaurado" : "Evento eliminado");
       if (editingEvent?.uid === ev.uid) setEditingEvent(null);
       await openPreview(previewCalId, previewCalName).catch(() => { });
     }
@@ -1213,8 +1180,9 @@ export default function Dashboard() {
                 <div key={group.key} className={styles.dayGroup}>
                   <div className={styles.dayLabel}>{group.label}</div>
                   {group.events.map((ev) => {
-                    const isDeleted = (pendingOverrides[ev.uid]?.deleted) || (config?.eventOverrides?.[ev.uid]?.deleted);
-                    if (isDeleted && !isEditMode) return null;
+                    const isDeleted = (pendingOverrides[ev.uid]?.deleted !== undefined) 
+                      ? pendingOverrides[ev.uid].deleted 
+                      : (config?.eventOverrides?.[ev.uid]?.deleted);
 
                     const title = formatEventTitle(
                       pendingOverrides[ev.uid]?.summary || ev.summary, 
@@ -1230,14 +1198,9 @@ export default function Dashboard() {
                         <span className={styles.eventTime}>
                           {ev.allDay ? "Todo el día" : formatTime(ev.start)}
                         </span>
-                        <div className={styles.eventTitle}>
-                          <MarqueeTitle 
-                            title={title}
-                            active={marqueeActive}
-                            onFinish={handleMarqueeFinish}
-                            onMount={(ov) => { if (ov) marqueeCount.current++; }}
-                            onUnmount={(ov) => { if (ov) marqueeCount.current--; }}
-                          />
+                        <div className={styles.previewTitleWrap}>
+                          {isDeleted && <span className={styles.deletedBadge}>Evento eliminado</span>}
+                          <MarqueeTitle title={title} />
                         </div>
                         {isEditMode && (
                           <div className={styles.eventActions}>
@@ -1255,7 +1218,7 @@ export default function Dashboard() {
                               className={`${styles.editEventBtn} ${isDeleted ? styles.btnRestore : ""}`}
                               onClick={(e) => { 
                                 e.stopPropagation(); 
-                                isDeleted ? handleResetEventOverride() : handleDeleteEventOverride(ev); 
+                                handleDeleteEventOverride(ev); 
                               }}
                               title={isDeleted ? "Restaurar evento" : "Eliminar este evento"}
                               aria-label={isDeleted ? `Restaurar ${ev.summary}` : `Eliminar ${ev.summary}`}
