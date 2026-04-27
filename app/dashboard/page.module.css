@@ -1176,7 +1176,6 @@
 .loadingLogo {
   width: 56px;
   height: 56px;
-  animation: fadeUp 0.5s var(--ease-out) both;
 }
 
 .loadingLogoText {
@@ -1186,7 +1185,6 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: fadeUp 0.5s var(--ease-out) 0.1s both;
 }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */

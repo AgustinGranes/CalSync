@@ -327,8 +327,6 @@ export default function Dashboard() {
   if (loading || (!config && !configError)) {
     return (
       <div className={styles.loadingFullscreen}>
-        <div className={styles.blobPurple} aria-hidden />
-        <div className={styles.blobBlue} aria-hidden />
         <div className={styles.loadingBrand}>
           <svg className={styles.loadingLogo} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
             <rect x="4" y="8" width="32" height="28" rx="5" fill="url(#ldg1)" />
