@@ -1194,7 +1194,7 @@ export default function Dashboard() {
                 <div key={group.key} className={styles.dayGroup}>
                   <div className={styles.dayLabel}>{group.label}</div>
                   {group.events.map((ev) => {
-                    const isDeleted = (pendingOverrides[ev.uid]?.deleted) || (config.eventOverrides?.[ev.uid]?.deleted);
+                    const isDeleted = (pendingOverrides[ev.uid]?.deleted) || (config?.eventOverrides?.[ev.uid]?.deleted);
                     if (isDeleted && !isEditMode) return null;
 
                     const title = formatEventTitle(
