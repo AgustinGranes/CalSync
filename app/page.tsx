@@ -48,6 +48,7 @@ export default function Home() {
   const [authError, setAuthError] = useState("");
   const [authMsg, setAuthMsg] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(true);
 
   useEffect(() => {
     if (!loading && user) router.push("/dashboard");
@@ -61,6 +62,8 @@ export default function Home() {
           const { uid, email: e, displayName, photoURL } = result.user;
           await ensureUserDoc(uid, e, displayName, photoURL);
           router.push("/dashboard");
+        } else {
+          setRedirecting(false);
         }
       })
       .catch((err: unknown) => {
@@ -68,6 +71,7 @@ export default function Home() {
         if (code && code !== "auth/no-current-user") {
           setAuthError("Error al iniciar sesión con Google. Intentá con email.");
         }
+        setRedirecting(false);
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -150,15 +154,36 @@ export default function Home() {
     }
   };
 
-  if (loading || user) {
-    // Still determining auth state, OR user is logged in and redirect is pending —
-    // show only a spinner so the login form never flashes.
+  if (loading || user || redirecting) {
+    // Still determining auth state, OR user is logged in and redirect is pending,
+    // OR processing Google redirect — show branded splash screen.
     return (
       <main className={styles.main}>
         <div className={styles.blobPurple} aria-hidden />
         <div className={styles.blobBlue} aria-hidden />
         <div className={styles.loadingCenter}>
-          <div className={styles.spinner} aria-label="Cargando" />
+          <div className={styles.loadingBrand}>
+            <svg className={styles.loadingLogo} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+              <rect x="4" y="8" width="32" height="28" rx="5" fill="url(#g1l)" />
+              <rect x="4" y="8" width="32" height="10" rx="5" fill="url(#g2l)" />
+              <rect x="4" y="14" width="32" height="4" fill="url(#g2l)" />
+              <circle cx="13" cy="27" r="2.5" fill="white" fillOpacity=".9" />
+              <circle cx="20" cy="27" r="2.5" fill="white" fillOpacity=".6" />
+              <circle cx="27" cy="27" r="2.5" fill="white" fillOpacity=".3" />
+              <line x1="12" y1="4" x2="12" y2="12" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+              <line x1="28" y1="4" x2="28" y2="12" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+              <defs>
+                <linearGradient id="g1l" x1="4" y1="8" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#7C3AED" /><stop offset="1" stopColor="#2563EB" />
+                </linearGradient>
+                <linearGradient id="g2l" x1="4" y1="8" x2="36" y2="18" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#5B21B6" /><stop offset="1" stopColor="#1D4ED8" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <span className={styles.loadingLogoText}>CalSync</span>
+            <div className={styles.spinner} aria-label="Cargando" />
+          </div>
         </div>
       </main>
     );

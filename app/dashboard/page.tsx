@@ -371,7 +371,28 @@ export default function Dashboard() {
         <div className={styles.blobPurple} aria-hidden />
         <div className={styles.blobBlue} aria-hidden />
         <div className={styles.loadingCenter}>
-          <span className={styles.spinner} />
+          <div className={styles.loadingBrand}>
+            <svg className={styles.loadingLogo} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+              <rect x="4" y="8" width="32" height="28" rx="5" fill="url(#ldg1)" />
+              <rect x="4" y="8" width="32" height="10" rx="5" fill="url(#ldg2)" />
+              <rect x="4" y="14" width="32" height="4" fill="url(#ldg2)" />
+              <circle cx="13" cy="27" r="2.5" fill="white" fillOpacity=".9" />
+              <circle cx="20" cy="27" r="2.5" fill="white" fillOpacity=".6" />
+              <circle cx="27" cy="27" r="2.5" fill="white" fillOpacity=".3" />
+              <line x1="12" y1="4" x2="12" y2="12" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+              <line x1="28" y1="4" x2="28" y2="12" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+              <defs>
+                <linearGradient id="ldg1" x1="4" y1="8" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#7C3AED" /><stop offset="1" stopColor="#2563EB" />
+                </linearGradient>
+                <linearGradient id="ldg2" x1="4" y1="8" x2="36" y2="18" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#5B21B6" /><stop offset="1" stopColor="#1D4ED8" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <span className={styles.loadingLogoText}>CalSync</span>
+            <span className={styles.spinner} />
+          </div>
         </div>
       </main>
     );
@@ -779,7 +800,6 @@ export default function Dashboard() {
 
       <div className={styles.container}>
 
-        /* --- Top Bar -------------------------------------------------------- */
         <header className={styles.topBar}>
           <div className={styles.logoWrap}>
             <svg className={styles.logoIcon} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
@@ -812,7 +832,6 @@ export default function Dashboard() {
           </div>
         </header>
 
-        /* --- Personal Link Card ---------------------------------------------- */
         <section className={styles.card} aria-label="Tu enlace personal">
           <div className={styles.cardHeader}>
             <div className={styles.cardIconWrap}>
@@ -847,7 +866,6 @@ export default function Dashboard() {
           </p>
         </section>
 
-        /* --- Calendars Card (collapsible) ------------------------------------ */
         <section className={styles.card} aria-label="Gestión de calendarios">
 
           {/* Header row: toggle button + "Ver todo" button */}
@@ -963,7 +981,6 @@ export default function Dashboard() {
           </div>
         </section>
 
-        /* --- Format Settings Card -------------------------------------------- */
         <section className={styles.card} aria-label="Ajustes de Eventos">
           <div className={styles.cardHeader}>
             <div className={styles.cardIconWrap}>
@@ -1077,7 +1094,6 @@ export default function Dashboard() {
         </section>
 
 
-        /* --- Share / Receive Card -------------------------------------------- */
         <section className={styles.card} aria-label="Compartir y recibir calendarios">
           <div className={styles.cardHeader}>
             <div className={styles.cardIconWrap}>
@@ -1114,7 +1130,6 @@ export default function Dashboard() {
         </footer>
       </div>
 
-      /* --- Toast notification ----------------------------------------------- */
       <div
         className={`${styles.toast} ${toast ? styles.toastVisible : ""} ${toastType === "error" ? styles.toastError : ""}`}
         role="status"
@@ -1134,7 +1149,6 @@ export default function Dashboard() {
         {toast}
       </div>
 
-      /* --- Edit Calendar Modal ---------------------------------------------- */
       {editingCal && (
         <div className={styles.modalOverlay} onClick={() => setEditingCal(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal aria-label="Editar calendario">
@@ -1155,7 +1169,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      /* --- Event Preview Modal (single cal OR all) ------------------------ */
       {previewOpen && (
         <div className={styles.modalOverlay} onClick={closePreview}>
           <div className={styles.previewModal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal>
@@ -1169,20 +1182,26 @@ export default function Dashboard() {
                     </p>
                   )}
                 </div>
+              </div>
+              <div className={styles.previewHeaderActions}>
                 {!previewLoading && !previewError && previewGroups.length > 0 && (
-                  <button 
+                  <button
                     className={`${styles.btnEditMode} ${isEditMode ? styles.btnEditModeActive : ""}`}
                     onClick={isEditMode ? handleCancelEdit : () => setIsEditMode(true)}
+                    title={isEditMode ? "Salir del modo edición" : "Editar eventos"}
                   >
-                    {isEditMode ? "Cancelar" : "Editar"}
+                    <svg viewBox="0 0 20 20" fill="none" width="14" height="14" aria-hidden>
+                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" fill="currentColor" />
+                    </svg>
+                    Editar
                   </button>
                 )}
+                <button className={styles.closeBtn} onClick={closePreview} aria-label="Cerrar">
+                  <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </button>
               </div>
-              <button className={styles.closeBtn} onClick={closePreview} aria-label="Cerrar">
-                <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
-                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              </button>
             </div>
             <div className={styles.previewBody}>
               {previewLoading && <div className={styles.spinner} style={{ margin: "40px auto" }} />}
@@ -1273,7 +1292,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      /* --- Edit Event Override Modal --------------------------------------- */
       {editingEvent && (
         <div className={styles.modalOverlay} onClick={() => setEditingEvent(null)}>
           <div
@@ -1408,7 +1426,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      /* --- Exceptions Management Modal -------------------------------------- */
       {exceptionsOpen && (
         <div className={styles.modalOverlay} onClick={() => { setExceptionsOpen(false); setAddingException(false); }}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal aria-label="Gestionar excepciones">

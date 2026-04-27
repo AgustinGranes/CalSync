@@ -817,11 +817,30 @@
 
 .previewHeader {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   padding: 20px 20px 16px;
   border-bottom: 1px solid var(--border);
   gap: 12px;
+}
+
+.previewTitleRow {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.previewTitleWrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.previewHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .previewTitle {
@@ -1112,7 +1131,31 @@
 }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
-/* ─── Edit Mode & Preview UI ────────────────────────────────────────────── */
+/* --- Loading Brand Screen -------------------------------------------------- */
+.loadingBrand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.loadingLogo {
+  width: 56px;
+  height: 56px;
+  animation: fadeUp 0.5s var(--ease-out) both;
+}
+
+.loadingLogoText {
+  font-size: 1.6rem;
+  font-weight: 700;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: fadeUp 0.5s var(--ease-out) 0.1s both;
+}
+
+/* --- Edit Mode & Preview UI ------------------------------------------------ */
 .previewTitleRow {
   display: flex;
   align-items: center;
@@ -1126,7 +1169,11 @@
 }
 
 .btnEditMode {
-  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  height: 34px;
   background: rgba(124, 58, 237, 0.1);
   border: 1px solid rgba(124, 58, 237, 0.3);
   border-radius: var(--radius-md);
