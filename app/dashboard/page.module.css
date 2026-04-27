@@ -1112,6 +1112,132 @@
 }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
+/* ─── Edit Mode & Preview UI ────────────────────────────────────────────── */
+.previewTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.previewTitleWrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.btnEditMode {
+  padding: 6px 12px;
+  background: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  border-radius: var(--radius-md);
+  color: var(--purple-light);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btnEditModeActive {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+.btnEditMode:hover {
+  transform: translateY(-1px);
+  background: rgba(124, 58, 237, 0.2);
+}
+
+.previewFooter {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  background: rgba(0,0,0,0.2);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.eventActions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.eventRowDeleted {
+  opacity: 0.5;
+  text-decoration: line-through;
+  background: rgba(239, 68, 68, 0.03);
+}
+
+.btnRestore {
+  color: #22c55e !important;
+  border-color: rgba(34, 197, 94, 0.2) !important;
+  background: rgba(34, 197, 94, 0.08) !important;
+}
+
+/* ─── Marquee ────────────────────────────────────────────────────────────── */
+.marqueeContainer {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  mask-image: linear-gradient(to right, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+}
+
+.marqueeText {
+  display: inline-block;
+  white-space: nowrap;
+  padding-right: 30px;
+  will-change: transform;
+}
+
+.marqueeAnimate {
+  animation: marquee var(--duration) linear forwards;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+/* ─── Confirm Modal ──────────────────────────────────────────────────────── */
+.confirmModal {
+  background: #1a1a2e;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  animation: slideUp 0.2s var(--ease-out);
+}
+
+.btnDanger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 18px;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnDanger:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+
+/* ─── Responsive Adjustments ─────────────────────────────────────────────── */
 @media (max-width: 480px) {
   .main { padding: 0 12px 80px; }
   .card { padding: 16px; }
@@ -1120,4 +1246,5 @@
   .shareActions { flex-direction: column; }
   .btnShareAction, .btnShareActionSecondary { min-width: unset; }
   .previewModal { max-height: 92dvh; }
+  .previewFooter { padding: 12px; }
 }

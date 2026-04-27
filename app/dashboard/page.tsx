@@ -71,6 +71,72 @@ function formatEventTitle(
   return title;
 }
 
+// ─── Marquee Component ──────────────────────────────────────────────────────
+
+function MarqueeTitle({
+  title,
+  active,
+  onFinish,
+  onMount,
+  onUnmount
+}: {
+  title: string;
+  active: boolean;
+  onFinish: () => void;
+  onMount: (overflows: boolean) => void;
+  onUnmount: (overflows: boolean) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
+  const [shouldScroll, setShouldScroll] = useState(false);
+  const [scrollDuration, setScrollDuration] = useState(0);
+  const wasOverflowing = useRef(false);
+
+  useEffect(() => {
+    if (containerRef.current && textRef.current) {
+      const containerWidth = containerRef.current.offsetWidth;
+      const textWidth = textRef.current.offsetWidth;
+      const overflows = textWidth > containerWidth;
+      
+      if (overflows !== wasOverflowing.current) {
+        if (overflows) onMount(true);
+        else if (wasOverflowing.current) onUnmount(true);
+        wasOverflowing.current = overflows;
+      }
+
+      if (overflows) {
+        setShouldScroll(true);
+        setScrollDuration((textWidth) / 40); // 40px/s
+      } else {
+        setShouldScroll(false);
+      }
+    }
+  }, [title, onMount, onUnmount]);
+
+  useEffect(() => {
+    return () => {
+      if (wasOverflowing.current) onUnmount(true);
+    };
+  }, [onUnmount]);
+
+  const handleAnimationEnd = () => {
+    onFinish();
+  };
+
+  return (
+    <div ref={containerRef} className={styles.marqueeContainer}>
+      <span
+        ref={textRef}
+        className={`${styles.marqueeText} ${active && shouldScroll ? styles.marqueeAnimate : ""}`}
+        style={{ "--duration": `${scrollDuration}s` } as any}
+        onAnimationEnd={handleAnimationEnd}
+      >
+        {title}
+      </span>
+    </div>
+  );
+}
+
 function groupEventsByDay(events: RawEvent[]): DayGroup[] {
   const map = new Map<string, DayGroup>();
   for (const ev of events) {
@@ -194,6 +260,44 @@ export default function Dashboard() {
   const [externalLoading, setExternalLoading] = useState(false);
   const [externalError, setExternalError] = useState("");
   const [selectedExtIds, setSelectedExtIds] = useState<Set<string>>(new Set());
+
+  // ── Edit Mode & Pending Changes ───────────────────────────────────────────
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [pendingOverrides, setPendingOverrides] = useState<Record<string, EventOverride>>({});
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+
+  // ── Marquee Synchronization ────────────────────────────────────────────────
+  const [marqueeActive, setMarqueeActive] = useState(false);
+  const marqueeCount = useRef(0);
+  const marqueeFinishedCount = useRef(0);
+
+  useEffect(() => {
+    // Initial delay before first marquee
+    const timer = setTimeout(() => setMarqueeActive(true), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleMarqueeFinish = useCallback(() => {
+    marqueeFinishedCount.current++;
+    if (marqueeFinishedCount.current >= marqueeCount.current) {
+      setMarqueeActive(false);
+      marqueeFinishedCount.current = 0;
+      // Wait before restarting
+      setTimeout(() => setMarqueeActive(true), 3000);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (Object.keys(pendingOverrides).length > 0) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [pendingOverrides]);
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -412,7 +516,25 @@ export default function Dashboard() {
 
   const handleOpenPreview = (cal: CalendarSource) => openPreview(cal.id, cal.name);
   const handleOpenAllCalendars = () => openPreview("all", "Todos los calendarios");
-  const closePreview = () => { setPreviewOpen(false); setPreviewGroups([]); setEditingEvent(null); };
+
+  const closePreview = () => {
+    if (Object.keys(pendingOverrides).length > 0) {
+      setPendingAction(() => () => {
+        setPreviewOpen(false);
+        setPreviewGroups([]);
+        setEditingEvent(null);
+        setIsEditMode(false);
+        setPendingOverrides({});
+      });
+      setShowExitConfirm(true);
+      return;
+    }
+    setPreviewOpen(false);
+    setPreviewGroups([]);
+    setEditingEvent(null);
+    setIsEditMode(false);
+    setPendingOverrides({});
+  };
 
   // ─── Edit individual event override ──────────────────────────────────────
 
@@ -430,7 +552,7 @@ export default function Dashboard() {
 
   const handleSaveEventOverride = async () => {
     if (!editingEvent || !config) return;
-    const currentOverrides = config.eventOverrides ?? {};
+
     const newOverride: EventOverride = {};
     if (editEvFields.summary !== undefined) newOverride.summary = editEvFields.summary;
     if (editEvFields.location !== undefined) newOverride.location = editEvFields.location;
@@ -440,30 +562,72 @@ export default function Dashboard() {
     if (editEvFields.start) newOverride.start = new Date(editEvFields.start).toISOString();
     if (editEvFields.end) newOverride.end = new Date(editEvFields.end).toISOString();
 
-    const updatedOverrides = { ...currentOverrides, [editingEvent.uid]: newOverride };
-    await saveConfig({ ...config, eventOverrides: updatedOverrides }, "Evento actualizado");
-    setEditingEvent(null);
-    // Refresh preview
-    await openPreview(previewCalId, previewCalName).catch(() => { });
+    if (isEditMode) {
+      setPendingOverrides(prev => ({ ...prev, [editingEvent.uid]: newOverride }));
+      setEditingEvent(null);
+    } else {
+      const currentOverrides = config.eventOverrides ?? {};
+      const updatedOverrides = { ...currentOverrides, [editingEvent.uid]: newOverride };
+      await saveConfig({ ...config, eventOverrides: updatedOverrides }, "Evento actualizado");
+      setEditingEvent(null);
+      await openPreview(previewCalId, previewCalName).catch(() => { });
+    }
   };
 
   const handleDeleteEventOverride = async (ev: RawEvent) => {
     if (!config) return;
-    const currentOverrides = config.eventOverrides ?? {};
-    const current = currentOverrides[ev.uid] || {};
-    const updatedOverrides = { ...currentOverrides, [ev.uid]: { ...current, deleted: true } };
-    await saveConfig({ ...config, eventOverrides: updatedOverrides }, "Evento eliminado");
-    if (editingEvent?.uid === ev.uid) setEditingEvent(null);
-    await openPreview(previewCalId, previewCalName).catch(() => { });
+    if (isEditMode) {
+      const current = pendingOverrides[ev.uid] || config.eventOverrides?.[ev.uid] || {};
+      setPendingOverrides(prev => ({ ...prev, [ev.uid]: { ...current, deleted: true } }));
+      if (editingEvent?.uid === ev.uid) setEditingEvent(null);
+    } else {
+      const currentOverrides = config.eventOverrides ?? {};
+      const current = currentOverrides[ev.uid] || {};
+      const updatedOverrides = { ...currentOverrides, [ev.uid]: { ...current, deleted: true } };
+      await saveConfig({ ...config, eventOverrides: updatedOverrides }, "Evento eliminado");
+      if (editingEvent?.uid === ev.uid) setEditingEvent(null);
+      await openPreview(previewCalId, previewCalName).catch(() => { });
+    }
   };
 
   const handleResetEventOverride = async () => {
     if (!editingEvent || !config) return;
-    const updated = { ...config.eventOverrides };
-    delete updated[editingEvent.uid];
-    await saveConfig({ ...config, eventOverrides: updated }, "Evento restaurado");
-    setEditingEvent(null);
+    if (isEditMode) {
+      setPendingOverrides(prev => {
+        const next = { ...prev };
+        delete next[editingEvent.uid];
+        return next;
+      });
+      setEditingEvent(null);
+    } else {
+      const updated = { ...config.eventOverrides };
+      delete updated[editingEvent.uid];
+      await saveConfig({ ...config, eventOverrides: updated }, "Evento restaurado");
+      setEditingEvent(null);
+      await openPreview(previewCalId, previewCalName).catch(() => { });
+    }
+  };
+
+  const handleSaveAllChanges = async () => {
+    if (!config) return;
+    const currentOverrides = config.eventOverrides ?? {};
+    const updatedOverrides = { ...currentOverrides, ...pendingOverrides };
+    await saveConfig({ ...config, eventOverrides: updatedOverrides }, "Cambios guardados");
+    setPendingOverrides({});
+    setIsEditMode(false);
     await openPreview(previewCalId, previewCalName).catch(() => { });
+  };
+
+  const handleCancelEdit = () => {
+    if (Object.keys(pendingOverrides).length > 0) {
+      setPendingAction(() => () => {
+        setIsEditMode(false);
+        setPendingOverrides({});
+      });
+      setShowExitConfirm(true);
+    } else {
+      setIsEditMode(false);
+    }
   };
 
   // ─── Calendar Exceptions ──────────────────────────────────────────────────
@@ -996,12 +1160,22 @@ export default function Dashboard() {
         <div className={styles.modalOverlay} onClick={closePreview}>
           <div className={styles.previewModal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal>
             <div className={styles.previewHeader}>
-              <div>
-                <h3 className={styles.previewTitle}>{previewCalName}</h3>
-                {!previewLoading && !previewError && (
-                  <p className={styles.previewSubtitle}>
-                    {previewGroups.reduce((n, g) => n + g.events.length, 0)} eventos encontrados
-                  </p>
+              <div className={styles.previewTitleRow}>
+                <div className={styles.previewTitleWrap}>
+                  <h3 className={styles.previewTitle}>{previewCalName}</h3>
+                  {!previewLoading && !previewError && (
+                    <p className={styles.previewSubtitle}>
+                      {previewGroups.reduce((n, g) => n + g.events.length, 0)} eventos encontrados
+                    </p>
+                  )}
+                </div>
+                {!previewLoading && !previewError && previewGroups.length > 0 && (
+                  <button 
+                    className={`${styles.btnEditMode} ${isEditMode ? styles.btnEditModeActive : ""}`}
+                    onClick={isEditMode ? handleCancelEdit : () => setIsEditMode(true)}
+                  >
+                    {isEditMode ? "Cancelar" : "Editar"}
+                  </button>
                 )}
               </div>
               <button className={styles.closeBtn} onClick={closePreview} aria-label="Cerrar">
@@ -1019,39 +1193,82 @@ export default function Dashboard() {
               {previewGroups.map((group) => (
                 <div key={group.key} className={styles.dayGroup}>
                   <div className={styles.dayLabel}>{group.label}</div>
-                  {group.events.map((ev) => (
-                    <div key={ev.uid} className={styles.eventRow}>
-                      <span className={styles.eventTime}>
-                        {ev.allDay ? "Todo el día" : formatTime(ev.start)}
-                      </span>
-                      <span className={styles.eventTitle}>
-                        {formatEventTitle(ev.summary, ev.calendarName, showEmojis, showCalName, ev.calendarId, cfg.calendarExceptions)}
-                      </span>
-                      <button
-                        className={styles.editEventBtn}
-                        onClick={(e) => { e.stopPropagation(); handleOpenEditEvent(ev); }}
-                        title="Editar este evento"
-                        aria-label={`Editar ${ev.summary}`}
-                      >
-                        <svg viewBox="0 0 20 20" fill="none" width="13" height="13">
-                          <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" fill="currentColor" />
-                        </svg>
-                      </button>
-                      <button
-                        className={styles.editEventBtn}
-                        onClick={(e) => { e.stopPropagation(); handleDeleteEventOverride(ev); }}
-                        title="Eliminar este evento"
-                        aria-label={`Eliminar ${ev.summary}`}
-                      >
-                        <svg viewBox="0 0 20 20" fill="none" width="13" height="13">
-                          <path d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" fill="currentColor" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
+                  {group.events.map((ev) => {
+                    const isDeleted = (pendingOverrides[ev.uid]?.deleted) || (config.eventOverrides?.[ev.uid]?.deleted);
+                    if (isDeleted && !isEditMode) return null;
+
+                    const title = formatEventTitle(
+                      pendingOverrides[ev.uid]?.summary || ev.summary, 
+                      ev.calendarName, 
+                      showEmojis, 
+                      showCalName, 
+                      ev.calendarId, 
+                      cfg.calendarExceptions
+                    );
+
+                    return (
+                      <div key={ev.uid} className={`${styles.eventRow} ${isDeleted ? styles.eventRowDeleted : ""}`}>
+                        <span className={styles.eventTime}>
+                          {ev.allDay ? "Todo el día" : formatTime(ev.start)}
+                        </span>
+                        <div className={styles.eventTitle}>
+                          <MarqueeTitle 
+                            title={title}
+                            active={marqueeActive}
+                            onFinish={handleMarqueeFinish}
+                            onMount={(ov) => { if (ov) marqueeCount.current++; }}
+                            onUnmount={(ov) => { if (ov) marqueeCount.current--; }}
+                          />
+                        </div>
+                        {isEditMode && (
+                          <div className={styles.eventActions}>
+                            <button
+                              className={styles.editEventBtn}
+                              onClick={(e) => { e.stopPropagation(); handleOpenEditEvent(ev); }}
+                              title="Editar este evento"
+                              aria-label={`Editar ${ev.summary}`}
+                            >
+                              <svg viewBox="0 0 20 20" fill="none" width="13" height="13">
+                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" fill="currentColor" />
+                              </svg>
+                            </button>
+                            <button
+                              className={`${styles.editEventBtn} ${isDeleted ? styles.btnRestore : ""}`}
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                isDeleted ? handleResetEventOverride() : handleDeleteEventOverride(ev); 
+                              }}
+                              title={isDeleted ? "Restaurar evento" : "Eliminar este evento"}
+                              aria-label={isDeleted ? `Restaurar ${ev.summary}` : `Eliminar ${ev.summary}`}
+                            >
+                              {isDeleted ? (
+                                <svg viewBox="0 0 24 24" fill="none" width="13" height="13">
+                                  <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              ) : (
+                                <svg viewBox="0 0 20 20" fill="none" width="13" height="13">
+                                  <path d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" fill="currentColor" />
+                                </svg>
+                              )}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               ))}
             </div>
+            {isEditMode && (
+              <div className={styles.previewFooter}>
+                <button className={styles.btnPrimary} onClick={handleSaveAllChanges} disabled={saving}>
+                  {saving ? "Guardando..." : "Guardar cambios"}
+                </button>
+                <button className={styles.btnSecondary} onClick={handleCancelEdit}>
+                  Cancelar
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1393,6 +1610,34 @@ export default function Dashboard() {
             {!externalData && !externalLoading && !externalError && (
               <p className={styles.receiveHint}>Copiá el enlace CalSync de otro usuario, o pegalo arriba y presioná Buscar.</p>
             )}
+          </div>
+        </div>
+      )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Exit Confirmation Popup ────────────────────────────────────────── */}
+      {showExitConfirm && (
+        <div className={styles.modalOverlay} style={{ zIndex: 1100 }}>
+          <div className={styles.confirmModal}>
+            <h3 className={styles.modalTitle}>¿Estás seguro que deseas salir?</h3>
+            <p className={styles.cardDesc}>Se van a cancelar los cambios realizados.</p>
+            <div className={styles.formActions}>
+              <button 
+                className={styles.btnDanger} 
+                onClick={() => {
+                  if (pendingAction) pendingAction();
+                  setShowExitConfirm(false);
+                  setPendingAction(null);
+                }}
+              >
+                Sí, salir
+              </button>
+              <button className={styles.btnSecondary} onClick={() => { setShowExitConfirm(false); setPendingAction(null); }}>
+                Seguir editando
+              </button>
+            </div>
           </div>
         </div>
       )}
