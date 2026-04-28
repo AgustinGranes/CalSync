@@ -20,6 +20,8 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue>({
   user: null,
   loading: true,
+  isGlobalLoading: true,
+  setGlobalLoading: () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
