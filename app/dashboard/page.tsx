@@ -1171,7 +1171,7 @@ export default function Dashboard() {
 
                     return (
                       <div key={ev.uid} className={`${styles.eventRow} ${isDeleted ? styles.eventRowDeleted : ""}`}>
-                        {isDeleted && <span className={styles.deletedBadge}>Evento eliminado</span>}
+                        {isDeleted && <span className={styles.deletedBadge} />}
                         <span className={styles.eventTime}>
                           {ev.allDay ? "Todo el día" : formatTime(ev.start)}
                         </span>

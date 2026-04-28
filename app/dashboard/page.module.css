@@ -1253,22 +1253,27 @@
 
 .deletedBadge {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(239, 68, 68, 0.95);
-  color: white;
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  pointer-events: none;
+  background: rgba(239, 68, 68, 0.05);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  z-index: 10;
-  pointer-events: none;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  color: white;
   white-space: nowrap;
-  width: max-content;
+}
+
+.deletedBadge::before {
+  content: "Evento eliminado";
+  background: rgba(239, 68, 68, 0.95);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
 }
 
 .btnRestore {
