@@ -326,9 +326,9 @@ export default function Dashboard() {
 
   if (loading || (!config && !configError)) {
     return (
-      <div className={styles.loadingFullscreen}>
-        <div className={styles.loadingBrand}>
-          <svg className={styles.loadingLogo} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <div className="loadingFullscreen">
+        <div className="loadingBrand">
+          <svg className="loadingLogo" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
             <rect x="4" y="8" width="32" height="28" rx="5" fill="url(#ldg1)" />
             <rect x="4" y="8" width="32" height="10" rx="5" fill="url(#ldg2)" />
             <rect x="4" y="14" width="32" height="4" fill="url(#ldg2)" />
@@ -346,8 +346,8 @@ export default function Dashboard() {
               </linearGradient>
             </defs>
           </svg>
-          <span className={styles.loadingLogoText}>CalSync</span>
-          <span className={styles.spinner} />
+          <span className="loadingLogoText">CalSync</span>
+          <span className="spinnerGlobal" />
         </div>
       </div>
     );
