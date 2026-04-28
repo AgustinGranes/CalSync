@@ -37,6 +37,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
+import GlobalLoader from "./components/GlobalLoader";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -49,7 +51,10 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <GlobalLoader />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

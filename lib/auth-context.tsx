@@ -13,6 +13,8 @@ import { auth } from "./firebase";
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
+  isGlobalLoading: boolean;
+  setGlobalLoading: (loading: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -23,11 +25,13 @@ const AuthContext = createContext<AuthContextValue>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isGlobalLoading, setGlobalLoading] = useState(true);
 
   useEffect(() => {
     // Fallback: if Firebase doesn't respond in 8s, stop loading
     const timeout = setTimeout(() => {
       setLoading(false);
+      setGlobalLoading(false);
     }, 8000);
 
     const unsub = onAuthStateChanged(
@@ -36,12 +40,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearTimeout(timeout);
         setUser(firebaseUser);
         setLoading(false);
+        // We don't automatically stop global loading here because 
+        // the dashboard might still need to fetch its config.
+        // The dashboard will call setGlobalLoading(false) when ready.
       },
       (error) => {
-        // Auth error (e.g. bad config)
         clearTimeout(timeout);
         console.error("[CalSync] onAuthStateChanged error:", error);
         setLoading(false);
+        setGlobalLoading(false);
       }
     );
 
@@ -52,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading, isGlobalLoading, setGlobalLoading }}>
       {children}
     </AuthContext.Provider>
   );
